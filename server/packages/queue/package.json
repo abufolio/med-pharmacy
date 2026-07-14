@@ -1,0 +1,12 @@
+{
+  "name": "@server/queue",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@nestjs/bullmq": "^11.0.0",
+    "@nestjs/common": "^11.0.0",
+    "bullmq": "^5.0.0"
+  }
+}

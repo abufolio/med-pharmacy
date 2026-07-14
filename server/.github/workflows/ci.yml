@@ -1,0 +1,163 @@
+# ═══════════════════════════════════════════════
+#  Pharmacy Cashback — CI/CD Pipeline
+# ═══════════════════════════════════════════════
+#  Triggers:
+#    - push to main / develop
+#    - pull requests to main
+# ═══════════════════════════════════════════════
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - "**.md"
+      - ".gitignore"
+      - ".dockerignore"
+      - "docker-compose*"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+
+env:
+  NODE_VERSION: "22"
+  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/pharmacy_cashback_test"
+  REDIS_URL: "redis://localhost:6379"
+
+jobs:
+  # ── Lint & Type Check ──────────────────────
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate --schema=packages/database/prisma/schema.prisma
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+  # ── Unit Tests ────────────────────────────
+  test:
+    name: Unit Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: pharmacy_cashback_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate --schema=packages/database/prisma/schema.prisma
+
+      - name: Run migrations
+        run: npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run tests with coverage
+        run: npm run test:cov
+
+  # ── Build Check ──────────────────────────
+  build:
+    name: Build Check
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [api, worker, bot]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate --schema=packages/database/prisma/schema.prisma
+
+      - name: Build ${{ matrix.app }}
+        run: npx nest build ${{ matrix.app }}
+
+  # ── Docker Build ─────────────────────────
+  docker:
+    name: Docker Build
+    needs: build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [api, worker, bot]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push ${{ matrix.app }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          build-args: APP=${{ matrix.app }}
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/pharmacy-${{ matrix.app }}:latest
+            ${{ secrets.DOCKER_USERNAME }}/pharmacy-${{ matrix.app }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

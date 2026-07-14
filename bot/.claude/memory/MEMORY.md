@@ -1,0 +1,2 @@
+- [med-bot-pagination](med-bot-pagination.md) — Paginated transaction history with inline keyboard navigation for bot
+- [med-bot-dev-status](med-bot-dev-status.md) — Current dev status and pending tasks for med/bot

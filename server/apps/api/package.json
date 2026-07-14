@@ -1,0 +1,12 @@
+{
+  "name": "@server/api",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@server/database": "*",
+    "@server/common": "*",
+    "@server/config": "*",
+    "@server/events": "*",
+    "@server/cache": "*"
+  }
+}

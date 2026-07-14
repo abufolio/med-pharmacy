@@ -1,0 +1,29 @@
+# ── Docker Compose — Bot (extends server network) ──
+# Usage: docker compose -f ../server/docker-compose.yml -f docker-compose.bot.yml up -d bot
+
+version: "3.9"
+
+services:
+  # ── Standalone Bot ────────────────────────────
+  standalone-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - pharmacy-network
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@server-postgres-1:5432/pharmacy_cashback
+      - REDIS_URL=redis://server-redis-1:6379
+      - TELEGRAM_BOT=${TELEGRAM_BOT}
+    depends_on:
+      server-postgres-1:
+        condition: service_healthy
+    env_file:
+      - .env
+
+networks:
+  pharmacy-network:
+    name: server_pharmacy-network
+    external: true

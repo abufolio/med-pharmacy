@@ -1,0 +1,13 @@
+{
+  "name": "@server/worker",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@server/database": "*",
+    "@server/common": "*",
+    "@server/config": "*",
+    "@server/events": "*",
+    "@server/queue": "*",
+    "@server/cache": "*"
+  }
+}

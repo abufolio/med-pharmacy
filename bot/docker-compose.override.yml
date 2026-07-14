@@ -1,0 +1,28 @@
+# ── Docker Compose override — hot-reload dev ─────
+# Usage: docker compose up -d --build standalone-bot-dev
+# This overrides the upstream compose to enable hot-reload
+
+services:
+  # ── Development Bot (hot-reload) ───────────────
+  standalone-bot-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    networks:
+      - pharmacy-network
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/pharmacy_cashback
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./src:/app/src:ro
+    env_file:
+      - .env
+    ports:
+      - "3001:3001"
+
+networks:
+  pharmacy-network:
+    name: server_pharmacy-network
+    external: true

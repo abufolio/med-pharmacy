@@ -1,0 +1,86 @@
+# ═══════════════════════════════════════════════
+#  Pharmacy Cashback — Production Override
+# ═══════════════════════════════════════════════
+#  Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# ═══════════════════════════════════════════════
+
+version: "3.9"
+
+x-app-prod: &app-prod
+  environment:
+    - NODE_ENV=production
+  restart: always
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+  deploy:
+    resources:
+      limits:
+        cpus: "1"
+        memory: 512M
+      reservations:
+        cpus: "0.25"
+        memory: 128M
+
+services:
+  postgres:
+    <<: *app-prod
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    <<: *app-prod
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    volumes:
+      - redis-data:/data
+
+  api:
+    <<: *app-prod
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - API_PORT=4000
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - TELEGRAM_BOT=${TELEGRAM_BOT}
+      - SENTRY_DSN=${SENTRY_DSN}
+
+  worker:
+    <<: *app-prod
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - TELEGRAM_BOT=${TELEGRAM_BOT}
+      - SENTRY_DSN=${SENTRY_DSN}
+
+  bot:
+    <<: *app-prod
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - TELEGRAM_BOT=${TELEGRAM_BOT}
+      - TELEGRAM_ADMIN_IDS=${TELEGRAM_ADMIN_IDS}
+      - SENTRY_DSN=${SENTRY_DSN}
