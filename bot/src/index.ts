@@ -8,6 +8,7 @@
 import { bot } from "./bot";
 import { config } from "./config";
 import { disconnectPrisma } from "./db/prisma";
+import { startNotificationWatcher, stopNotificationWatcher } from "./services/notificationWatcher";
 
 async function main() {
   const env = config.app.env;
@@ -27,11 +28,16 @@ async function main() {
       { command: "start", description: "Botni ishga tushirish / Запустить бота / Start" },
       { command: "login", description: "🔐 Tizimga kirish / Войти / Login" },
       { command: "logout", description: "🚪 Tizimdan chiqish / Выйти / Logout" },
+      { command: "stats", description: "📊 Statistika (admin)" },
+      { command: "broadcast", description: "📨 Xabar yuborish (admin)" },
     ]);
     console.log("  ✅ Commands registered");
   } catch (e) {
     console.log("  ⚠️ Could not register commands:", (e as Error).message);
   }
+
+  // ── Start notification watcher ────────────────
+  startNotificationWatcher(bot);
 
   if (env === "production") {
     // Webhook mode for production
@@ -63,12 +69,14 @@ main().catch(async (err) => {
 // Graceful shutdown
 process.on("SIGINT", async () => {
   console.log("\n👋 Shutting down...");
+  stopNotificationWatcher();
   await disconnectPrisma();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
   console.log("\n👋 Shutting down...");
+  stopNotificationWatcher();
   await disconnectPrisma();
   process.exit(0);
 });

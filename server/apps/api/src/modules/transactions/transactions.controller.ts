@@ -48,14 +48,22 @@ export class TransactionsController {
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get(':id')
-  async findById(@Param('id') id: string) {
-    return this.transactions.findById(id);
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId;
+    return this.transactions.findById(id, pharmacyId);
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Post(':id/reverse')
   @HttpCode(HttpStatus.OK)
-  async reverse(@Param('id') id: string) {
-    return this.transactions.reverseTransaction(id);
+  async reverse(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId;
+    return this.transactions.reverseTransaction(id, pharmacyId);
   }
 }

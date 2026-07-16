@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@server/database';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 
@@ -24,6 +24,8 @@ export class NotificationsService {
   }
 
   async markRead(id: string) {
+    const existing = await this.prisma.client.notification.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Notification not found');
     await this.prisma.client.notification.update({ where: { id }, data: { isRead: true } });
     return { message: 'Marked as read' };
   }

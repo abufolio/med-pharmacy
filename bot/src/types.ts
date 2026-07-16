@@ -25,10 +25,12 @@ export interface User {
 
 // Session data (per-chat storage)
 export interface SessionData {
-  step: "idle" | "lang_select" | "enter_firstname" | "enter_lastname" | "enter_phone" | "enter_address" | "enter_password" | "confirm" | "main_menu" | "withdraw_amount" | "promo_enter" | "login_password" | "history_viewing";
+  step: "idle" | "lang_select" | "enter_firstname" | "enter_lastname" | "enter_phone" | "enter_address" | "enter_password" | "confirm" | "main_menu" | "withdraw_amount" | "promo_enter" | "login_password" | "history_viewing" | "card_viewing" | "card_history_viewing" | "broadcast_text" | "notif_viewing";
   lang: LanguageCode;
   isLoggedIn: boolean;
+  lastActivity: number; // timestamp for session expiry
   historyPage: number;
+  broadcastMessage: string | undefined;
   tempRegistration: {
     firstName: string;
     lastName: string;
@@ -37,6 +39,7 @@ export interface SessionData {
     addressLat: number | null;
     addressLng: number | null;
     password: string;
+    referrerUserId?: string;
   } | null;
 }
 

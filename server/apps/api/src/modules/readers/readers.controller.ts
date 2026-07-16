@@ -57,7 +57,8 @@ export class ReadersController {
   async updateStatus(
     @Param('serialNumber') serialNumber: string,
     @Body('status') status: 'ONLINE' | 'OFFLINE' | 'FAULTY',
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.readers.updateStatus(serialNumber, status);
+    return this.readers.updateStatus(serialNumber, status, user.pharmacyId, user.scope);
   }
 }

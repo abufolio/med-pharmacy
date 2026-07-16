@@ -16,9 +16,18 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   async validate(payload: JwtPayload) {
     // Determine entity type from payload
-    let entity: { id: string; login: string; status: string } | null = null;
+    let entity: { id: string; login: string; status: string; pharmacyId?: string } | null = null;
 
-    if (payload.scope === 'PHARMACY') {
+    if (payload.scope === 'SYSTEM') {
+      const admin = await this.prisma.client.superAdmin.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, login: true, status: true },
+      });
+      if (!admin || admin.status !== 'ACTIVE') {
+        throw new UnauthorizedException('Super admin not found or inactive');
+      }
+      entity = admin;
+    } else if (payload.scope === 'PHARMACY') {
       const employee = await this.prisma.client.employee.findUnique({
         where: { id: payload.sub },
         select: { id: true, login: true, status: true, pharmacyId: true },
@@ -38,7 +47,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       login: entity.login,
       role: payload.role,
       scope: payload.scope,
-      pharmacyId: payload.pharmacyId,
+      pharmacyId: entity.pharmacyId,
     };
   }
 }

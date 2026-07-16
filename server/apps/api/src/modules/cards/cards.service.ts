@@ -210,7 +210,12 @@ export class CardsService {
       throw new BadRequestException('Card is not assigned to any user');
     }
 
-    // 4. Build scan response
+    // 4. Query real wallet balance
+    const wallet = await this.prisma.client.wallet.findUnique({
+      where: { userId: assignment.user.id },
+    });
+
+    // 5. Build scan response
     const response: ScanResponse = {
       success: true,
       user: {
@@ -218,7 +223,7 @@ export class CardsService {
         firstName: assignment.user.firstName,
         lastName: assignment.user.lastName,
         phone: assignment.user.phone,
-        balance: 0,
+        balance: wallet ? Number(wallet.balance) : 0,
       },
       card: {
         uid: card.uid,
@@ -226,7 +231,7 @@ export class CardsService {
       },
     };
 
-    // 5. Cache idempotency (5 seconds TTL)
+    // 6. Cache idempotency (5 seconds TTL)
     if (dto.idempotencyKey) {
       await this.prisma.client.idempotencyKey
         .create({

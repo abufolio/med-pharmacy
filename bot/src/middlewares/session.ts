@@ -1,22 +1,30 @@
 import { session } from "grammy";
 import { SessionData } from "../types";
+import { config } from "../config";
+import { createRedisSessionAdapter } from "./redis-session";
 
 /**
  * Initial session data for each chat.
- * In-memory session storage (production will use Redis).
  */
 function initialSession(): SessionData {
   return {
     step: "idle",
     lang: "uz",
     isLoggedIn: false,
+    lastActivity: Date.now(),
     historyPage: 0,
+    broadcastMessage: undefined,
     tempRegistration: null,
   };
 }
 
+/**
+ * Session middleware — Redis in production, in-memory in development.
+ */
 export const sessionMiddleware = session({
   initial: initialSession,
-  // In-memory storage — replace with Redis in production
-  storage: undefined, // uses default MemoryStorage
+  storage:
+    config.app.env === "production"
+      ? createRedisSessionAdapter()
+      : undefined, // MemoryStorage in dev
 });

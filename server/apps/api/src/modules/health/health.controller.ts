@@ -59,26 +59,12 @@ export class HealthController {
   }
 
   /**
-   * Full health check (legacy path + combined view)
+   * Full health check (delegates to ready probe)
    */
   @Get()
   @Public()
   @HealthCheck()
   check() {
-    return this.health.check([
-      async () => {
-        await this.prisma.client.$queryRaw`SELECT 1`;
-        return { database: { status: 'up' } };
-      },
-      async () => {
-        const ping = await this.cache.ping();
-        return { redis: { status: ping === 'PONG' ? 'up' : 'down' } };
-      },
-      () => this.memory.checkHeap('memory_heap', 200 * 1024 * 1024),
-      () => this.disk.checkStorage('disk', {
-        thresholdPercent: 0.8,
-        path: '/',
-      }),
-    ]);
+    return this.ready();
   }
 }

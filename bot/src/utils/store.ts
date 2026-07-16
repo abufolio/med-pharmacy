@@ -4,7 +4,8 @@
  */
 
 import { prisma } from "../db/prisma";
-import { LanguageCode, SessionData, User, UserStatus } from "../types";
+import { LanguageCode, User, UserStatus } from "../types";
+import { z } from "zod";
 
 // ── Transaction display data ───────────────────────────
 export interface TransactionItem {
@@ -19,6 +20,32 @@ export interface TransactionItem {
 
 export interface PaginatedTransactions {
   items: TransactionItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+  perPage: number;
+}
+
+// ── Card display data ──────────────────────────────
+export interface CardDetails {
+  uid: string;
+  status: string;
+  issuedAt: Date;
+  assignedAt: Date;
+  assignmentStatus: string;
+}
+
+export interface CardHistoryItem {
+  uid: string;
+  status: string;
+  assignedAt: Date;
+  unassignedAt: Date | null;
+  assignmentStatus: string;
+  isCurrent: boolean;
+}
+
+export interface PaginatedCardHistory {
+  items: CardHistoryItem[];
   total: number;
   page: number;
   totalPages: number;
@@ -265,5 +292,261 @@ export const userStore = {
     }));
 
     return { items, total, page: safePage, totalPages, perPage };
+  },
+
+  /**
+   * Get current card details for a user
+   */
+  async getCardDetails(telegramId: number): Promise<CardDetails | null> {
+    const user = await prisma.user.findUnique({
+      where: { telegramId },
+      select: { id: true },
+    });
+    if (!user) return null;
+
+    const activeAssignment = await prisma.cardAssignment.findFirst({
+      where: { userId: user.id, status: "ACTIVE" },
+      include: { card: true },
+      orderBy: { assignedAt: "desc" },
+    });
+
+    if (!activeAssignment) return null;
+
+    return {
+      uid: activeAssignment.card.uid,
+      status: activeAssignment.card.status,
+      issuedAt: activeAssignment.card.issuedAt,
+      assignedAt: activeAssignment.assignedAt,
+      assignmentStatus: activeAssignment.status,
+    };
+  },
+
+  /**
+   * Get paginated card assignment history for a user
+   */
+  async getCardHistory(
+    telegramId: number,
+    page: number = 0,
+    perPage: number = 5,
+  ): Promise<PaginatedCardHistory | null> {
+    const user = await prisma.user.findUnique({
+      where: { telegramId },
+      select: { id: true },
+    });
+    if (!user) return null;
+
+    const total = await prisma.cardAssignment.count({
+      where: { userId: user.id },
+    });
+
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+    const safePage = Math.min(Math.max(0, page), totalPages - 1);
+
+    const assignments = await prisma.cardAssignment.findMany({
+      where: { userId: user.id },
+      include: { card: true },
+      orderBy: { assignedAt: "desc" },
+      skip: safePage * perPage,
+      take: perPage,
+    });
+
+    // Get current active assignment to mark it
+    const currentAssignment = await prisma.cardAssignment.findFirst({
+      where: { userId: user.id, status: "ACTIVE" },
+      select: { id: true },
+    });
+
+    const items: CardHistoryItem[] = assignments.map((a) => ({
+      uid: a.card.uid,
+      status: a.card.status,
+      assignedAt: a.assignedAt,
+      unassignedAt: a.unassignedAt,
+      assignmentStatus: a.status,
+      isCurrent: a.id === currentAssignment?.id,
+    }));
+
+    return { items, total, page: safePage, totalPages, perPage };
+  },
+
+  // ── Admin: Statistics ────────────────────────────
+
+  /**
+   * Get bot statistics for admin panel
+   */
+  async getStats(): Promise<{
+    totalUsers: number;
+    activeUsers: number;
+    pendingCardUsers: number;
+    blockedUsers: number;
+    totalTransactions: number;
+    totalCashbackAmount: number;
+    totalWalletBalance: number;
+  }> {
+    const [
+      totalUsers,
+      activeUsers,
+      pendingCardUsers,
+      blockedUsers,
+      totalTransactions,
+      cashbackAgg,
+      walletAgg,
+    ] = await Promise.all([
+      prisma.user.count({ where: { deletedAt: null } }),
+      prisma.user.count({ where: { deletedAt: null, status: "ACTIVE" } }),
+      prisma.user.count({ where: { deletedAt: null, status: "PENDING_CARD" } }),
+      prisma.user.count({ where: { deletedAt: null, status: "BLOCKED" } }),
+      prisma.transaction.count(),
+      prisma.cashback.aggregate({ _sum: { amount: true } }),
+      prisma.wallet.aggregate({ _sum: { balance: true } }),
+    ]);
+
+    return {
+      totalUsers,
+      activeUsers,
+      pendingCardUsers,
+      blockedUsers,
+      totalTransactions,
+      totalCashbackAmount: Number(cashbackAgg._sum.amount || 0),
+      totalWalletBalance: Number(walletAgg._sum.balance || 0),
+    };
+  },
+
+  /**
+   * Get all telegram IDs for broadcast (users who have telegram linked)
+   */
+  async getAllTelegramIds(): Promise<number[]> {
+    const users = await prisma.user.findMany({
+      where: {
+        telegramId: { not: null },
+        deletedAt: null,
+      },
+      select: { telegramId: true },
+    });
+    return users
+      .map((u) => (u.telegramId ? Number(u.telegramId) : null))
+      .filter((id): id is number => id !== null);
+  },
+
+  // ──────────────────────────────────────────────────
+  // API Integration — real DB operations (replaces simulated/in-memory)
+  // ──────────────────────────────────────────────────
+
+  /**
+   * Create a withdraw request (TechSpec FR-051)
+   * — checks balance, creates WithdrawRequest record
+   * — does NOT debit wallet (admin approves later)
+   */
+  async createWithdrawRequest(
+    telegramId: number,
+    amount: number,
+  ): Promise<{ success: true; requestId: string } | { success: false; error: string }> {
+    const user = await prisma.user.findUnique({
+      where: { telegramId },
+      include: { wallet: true },
+    });
+    if (!user) return { success: false, error: "User not found" };
+    if (!user.wallet) return { success: false, error: "No wallet" };
+
+    const balance = Number(user.wallet.balance);
+    if (balance < amount) {
+      return { success: false, error: "Insufficient balance" };
+    }
+
+    const request = await prisma.withdrawRequest.create({
+      data: {
+        userId: user.id,
+        amount,
+      },
+    });
+
+    return { success: true, requestId: request.id };
+  },
+
+  /**
+   * Validate and redeem a promo code (TechSpec FR-053)
+   * — checks active, valid window, usage limit, duplicate
+   * — creates PromoRedemption record, increments usedCount
+   */
+  async redeemPromoCode(
+    telegramId: number,
+    code: string,
+  ): Promise<
+    { success: true; discount: number; type: string } | { success: false; error: string }
+  > {
+    const user = await prisma.user.findUnique({ where: { telegramId } });
+    if (!user) return { success: false, error: "User not found" };
+
+    const promo = await prisma.promoCode.findUnique({
+      where: { code: code.toUpperCase() },
+    });
+    if (!promo) return { success: false, error: "PROMO_INVALID" };
+    if (!promo.isActive) return { success: false, error: "PROMO_INACTIVE" };
+
+    const now = new Date();
+    if (promo.validFrom && now < promo.validFrom) {
+      return { success: false, error: "PROMO_NOT_YET" };
+    }
+    if (promo.validTo && now > promo.validTo) {
+      return { success: false, error: "PROMO_EXPIRED" };
+    }
+    if (promo.usageLimit > 0 && promo.usedCount >= promo.usageLimit) {
+      return { success: false, error: "PROMO_LIMIT" };
+    }
+
+    // Check duplicate
+    const existing = await prisma.promoRedemption.findUnique({
+      where: {
+        promoCodeId_userId: { promoCodeId: promo.id, userId: user.id },
+      },
+    });
+    if (existing) return { success: false, error: "PROMO_DUPLICATE" };
+
+    // Atomic redemption
+    await prisma.$transaction(async (tx: any) => {
+      await tx.promoRedemption.create({
+        data: { promoCodeId: promo.id, userId: user.id },
+      });
+      await tx.promoCode.update({
+        where: { id: promo.id },
+        data: { usedCount: { increment: 1 } },
+      });
+    });
+
+    const discount =
+      promo.type === "PERCENT"
+        ? 0 // No purchase context in bot
+        : Number(promo.value);
+
+    return { success: true, discount, type: promo.type };
+  },
+
+  /**
+   * Get real referral stats from DB (TechSpec FR-052)
+   */
+  async getReferralStats(telegramId: number): Promise<{
+    count: number;
+    completed: number;
+    pending: number;
+    bonusAmount: number;
+  }> {
+    const user = await prisma.user.findUnique({ where: { telegramId } });
+    if (!user) return { count: 0, completed: 0, pending: 0, bonusAmount: 0 };
+
+    const [total, completed, pending, bonusAgg] = await Promise.all([
+      prisma.referral.count({ where: { referrerId: user.id } }),
+      prisma.referral.count({ where: { referrerId: user.id, status: "COMPLETED" } }),
+      prisma.referral.count({ where: { referrerId: user.id, status: "PENDING" } }),
+      prisma.referral.aggregate({
+        where: { referrerId: user.id, status: "COMPLETED" },
+        _sum: { bonusAmount: true },
+      }),
+    ]);
+
+    return {
+      count: total,
+      completed,
+      pending,
+      bonusAmount: Number(bonusAgg._sum.bonusAmount || 0),
+    };
   },
 };

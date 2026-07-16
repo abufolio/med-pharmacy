@@ -22,6 +22,15 @@ export class WalletsController {
 
   // ── Wallet Balance ──
 
+  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
+  @Get('withdraw-requests')
+  async getWithdrawRequests(
+    @Query('page') page = '1',
+    @Query('limit') limit = '50',
+  ) {
+    return this.wallets.getWithdrawRequests(undefined, Number(page), Number(limit));
+  }
+
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Get(':userId')
   async getBalance(@Param('userId') userId: string) {
@@ -48,15 +57,6 @@ export class WalletsController {
     @Body() dto: RequestWithdrawDto,
   ) {
     return this.wallets.requestWithdraw(userId, dto);
-  }
-
-  @Roles('SUPER_ADMIN')
-  @Get('withdraw-requests')
-  async getWithdrawRequests(
-    @Query('page') page = '1',
-    @Query('limit') limit = '50',
-  ) {
-    return this.wallets.getWithdrawRequests(undefined, Number(page), Number(limit));
   }
 
   @Roles('SUPER_ADMIN')

@@ -1,11 +1,13 @@
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@server/database';
 import { AuditHelper } from '../audit/audit.helper';
 import { CreateCashbackRuleDto, UpdateCashbackRuleDto } from './dto/cashback-rule.dto';
+import { AccrueCashbackDto } from './dto/accrue-cashback.dto';
 
 @Injectable()
 export class CashbacksService {
@@ -137,5 +139,105 @@ export class CashbacksService {
     ]);
 
     return { data, total, page, limit };
+  }
+
+  async accrue(dto: AccrueCashbackDto) {
+    const transaction = await this.prisma.client.transaction.findUnique({
+      where: { id: dto.transactionId },
+      include: { user: true },
+    });
+    if (!transaction) throw new NotFoundException('Transaction not found');
+
+    // Prevent duplicate accrual
+    const existing = await this.prisma.client.cashback.findUnique({
+      where: { transactionId: dto.transactionId },
+    });
+    if (existing) throw new BadRequestException('Cashback already accrued for this transaction');
+
+    // Find the most specific active rule for this pharmacy
+    const rule = await this.prisma.client.cashbackRule.findFirst({
+      where: {
+        pharmacyId: transaction.pharmacyId,
+        isActive: true,
+        OR: [
+          { validFrom: null, validTo: null },
+          { validFrom: null, validTo: { gte: new Date() } },
+          { validFrom: { lte: new Date() }, validTo: null },
+          { validFrom: { lte: new Date() }, validTo: { gte: new Date() } },
+        ],
+        AND: [
+          { OR: [{ minPurchase: null }, { minPurchase: { lte: transaction.amount } }] },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!rule) throw new BadRequestException('No active cashback rule found for this transaction');
+
+    // Calculate cashback amount
+    let cashbackAmount: number;
+    if (dto.overrideAmount !== undefined) {
+      cashbackAmount = dto.overrideAmount;
+    } else if (rule.type === 'PERCENT') {
+      cashbackAmount = (Number(transaction.amount) * Number(rule.value)) / 100;
+      // Cap by maxCashback if set
+      if (rule.maxCashback !== null && cashbackAmount > Number(rule.maxCashback)) {
+        cashbackAmount = Number(rule.maxCashback);
+      }
+    } else {
+      // FIXED / CAMPAIGN
+      cashbackAmount = Number(rule.value);
+    }
+
+    // Atomically create Cashback + credit wallet
+    const result = await this.prisma.client.$transaction(async (tx: any) => {
+      const cashback = await tx.cashback.create({
+        data: {
+          transactionId: dto.transactionId,
+          userId: transaction.userId,
+          amount: cashbackAmount,
+        },
+      });
+
+      // Upsert wallet: create if not exists, increment balance
+      await tx.wallet.upsert({
+        where: { userId: transaction.userId },
+        create: {
+          userId: transaction.userId,
+          balance: cashbackAmount,
+        },
+        update: {
+          balance: { increment: cashbackAmount },
+        },
+      });
+
+      // Record wallet transaction
+      await tx.walletTransaction.create({
+        data: {
+          wallet: { connect: { userId: transaction.userId } },
+          type: 'CREDIT',
+          amount: cashbackAmount,
+          referenceType: 'cashback',
+          referenceId: cashback.id,
+          description: `Cashback for transaction ${dto.transactionId}`,
+        },
+      });
+
+      return cashback;
+    });
+
+    this.audit.log('CASHBACK_ACCRUED', 'cashback', result.id, undefined, {
+      userId: transaction.userId,
+      transactionId: dto.transactionId,
+      amount: cashbackAmount,
+      ruleId: rule.id,
+      pharmacyId: transaction.pharmacyId,
+    });
+
+    return {
+      cashback: result,
+      amount: cashbackAmount,
+      rule: { type: rule.type, value: rule.value },
+      pharmacyId: transaction.pharmacyId,
+    };
   }
 }

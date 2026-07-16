@@ -151,34 +151,29 @@ export class PromocodesService {
       throw new BadRequestException('Promo code has expired');
     }
 
-    // Validate usage limit
-    if (promoCode.usageLimit > 0 && promoCode.usedCount >= promoCode.usageLimit) {
-      throw new BadRequestException('Promo code usage limit reached');
-    }
-
-    // Check duplicate redemption
-    const existing = await this.prisma.client.promoRedemption.findUnique({
-      where: {
-        promoCodeId_userId: {
-          promoCodeId: promoCode.id,
-          userId,
-        },
-      },
-    });
-    if (existing) {
-      throw new ConflictException('Promo code already redeemed by this user');
-    }
-
-    // Calculate discount
-    let discount = 0;
-    if (promoCode.type === 'PERCENT') {
-      discount = (dto.purchaseAmount * Number(promoCode.value)) / 100;
-    } else {
-      discount = Number(promoCode.value);
-    }
-
-    // Atomic redemption + increment
+    // Atomic: validate usage limit + duplicate + create + increment
     const result = await this.prisma.client.$transaction(async (tx: any) => {
+      // Re-read promo code inside transaction to get latest usedCount
+      const fresh = await tx.promoCode.findUnique({ where: { id: promoCode.id } });
+      if (!fresh) throw new NotFoundException('Promo code not found');
+
+      if (fresh.usageLimit > 0 && fresh.usedCount >= fresh.usageLimit) {
+        throw new BadRequestException('Promo code usage limit reached');
+      }
+
+      // Check duplicate redemption inside transaction
+      const existing = await tx.promoRedemption.findUnique({
+        where: {
+          promoCodeId_userId: {
+            promoCodeId: promoCode.id,
+            userId,
+          },
+        },
+      });
+      if (existing) {
+        throw new ConflictException('Promo code already redeemed by this user');
+      }
+
       const redemption = await tx.promoRedemption.create({
         data: {
           promoCodeId: promoCode.id,
@@ -193,6 +188,14 @@ export class PromocodesService {
 
       return redemption;
     });
+
+    // Calculate discount (outside transaction — pure calc)
+    let discount = 0;
+    if (promoCode.type === 'PERCENT') {
+      discount = (dto.purchaseAmount * Number(promoCode.value)) / 100;
+    } else {
+      discount = Number(promoCode.value);
+    }
 
     this.audit.log('PROMO_CODE_REDEEMED', 'promo_redemption', result.id, undefined, {
       userId,

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { EmployeesService } from './employees.service';
 import { CreateEmployeeDto, UpdateEmployeeDto } from './dto/employee.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -14,14 +14,17 @@ export class EmployeesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() dto: CreateEmployeeDto, @CurrentUser() user: AuthenticatedUser) {
-    const pharmacyId = user.role === 'SUPER_ADMIN' ? dto.pharmacyId! : user.pharmacyId!;
+    const pharmacyId = user.role === 'SUPER_ADMIN' ? dto.pharmacyId : user.pharmacyId;
+    if (!pharmacyId) throw new BadRequestException('pharmacyId is required');
     return this.employees.create(dto, pharmacyId);
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get()
   async findAll(@CurrentUser() user: AuthenticatedUser, @Query('page') page = '1', @Query('limit') limit = '50') {
-    return this.employees.findAll(user.pharmacyId!, Number(page), Number(limit));
+    // SUPER_ADMIN sees all employees; PHARMACY_ADMIN sees only their pharmacy's
+    const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId!;
+    return this.employees.findAll(pharmacyId, Number(page), Number(limit));
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')

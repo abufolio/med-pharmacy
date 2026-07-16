@@ -3,8 +3,10 @@ import bcryptjs from "bcryptjs";
 import { nanoid } from "nanoid";
 import { BotContext, LanguageCode, SessionData, User } from "../types";
 import { t } from "../utils/i18n";
+import { prisma } from "../db/prisma";
 import { userStore } from "../utils/store";
 import { showMainMenu } from "./menu";
+import { firstNameSchema, lastNameSchema, passwordSchema, addressSchema } from "../utils/validation";
 
 /**
  * Registration wizard — multi-step form.
@@ -54,7 +56,8 @@ export async function handleFirstName(ctx: BotContext, text: string) {
   const lang = ctx.session.lang;
   const name = text.trim();
 
-  if (name.length < 2 || name.length > 80) {
+  const result = firstNameSchema.safeParse(name);
+  if (!result.success) {
     await ctx.reply(t(lang, "enter_firstname"));
     return;
   }
@@ -73,7 +76,8 @@ export async function handleLastName(ctx: BotContext, text: string) {
   const lang = ctx.session.lang;
   const name = text.trim();
 
-  if (name.length < 2 || name.length > 80) {
+  const result = lastNameSchema.safeParse(name);
+  if (!result.success) {
     await ctx.reply(t(lang, "enter_lastname"));
     return;
   }
@@ -120,7 +124,8 @@ export async function handleAddress(ctx: BotContext, text: string) {
   const lang = ctx.session.lang;
   const address = text.trim();
 
-  if (address.length < 3) {
+  const result = addressSchema.safeParse(address);
+  if (!result.success) {
     await ctx.reply(t(lang, "enter_address"));
     return;
   }
@@ -172,8 +177,10 @@ export async function handlePassword(ctx: BotContext, text: string) {
   const lang = ctx.session.lang;
   const password = text.trim();
 
-  if (password.length < 6) {
-    await ctx.reply(t(lang, "password_too_short"));
+  const result = passwordSchema.safeParse(password);
+  if (!result.success) {
+    const firstError = result.error.errors[0]?.message || t(lang, "password_too_short");
+    await ctx.reply(firstError);
     return;
   }
 
@@ -233,12 +240,18 @@ export async function handleConfirmation(ctx: BotContext, text: string) {
     return;
   }
 
-  // Check for duplicate
+  // Check for duplicate (by Telegram ID and phone)
   const existingUser = await userStore.findByTelegramId(ctx.from!.id);
   if (existingUser) {
     ctx.session.step = "main_menu";
     await ctx.reply(t(lang, "register_duplicate"));
     await showMainMenu(ctx);
+    return;
+  }
+
+  const existingPhone = await userStore.findByPhone(reg.phone);
+  if (existingPhone) {
+    await ctx.reply(t(lang, "register_phone_exists"));
     return;
   }
 
@@ -265,7 +278,25 @@ export async function handleConfirmation(ctx: BotContext, text: string) {
     updatedAt: new Date(),
   };
 
-  await userStore.create(newUser);
+  const createdUser = await userStore.create(newUser);
+
+  // ── Handle referral deep link ─────────────────────
+  // If user came via referral link, create Referral record
+  if (reg.referrerUserId) {
+    try {
+      await prisma.referral.create({
+        data: {
+          referrerId: reg.referrerUserId,
+          referredId: createdUser.id,
+          status: "PENDING",
+          bonusAmount: 0,
+        },
+      });
+    } catch (err) {
+      // Referral creation is non-critical — log but don't block registration
+      console.error("[Referral] Failed to create:", err);
+    }
+  }
 
   // Clear registration temp data
   ctx.session.tempRegistration = null;

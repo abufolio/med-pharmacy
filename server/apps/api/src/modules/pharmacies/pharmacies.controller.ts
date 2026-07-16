@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Body, Param, Query, UseGuards, HttpCode, HttpStatus,
+  Body, Param, Query, UseGuards, HttpCode, HttpStatus, ForbiddenException,
 } from '@nestjs/common';
 import { PharmaciesService } from './pharmacies.service';
 import {
@@ -99,13 +99,24 @@ export class PharmaciesController {
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get('pharmacies/:id')
-  async findById(@Param('id') id: string) {
+  async findById(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    // PHARMACY_ADMIN can only view their own pharmacy
+    if (user.scope !== 'SUPER_ADMIN' && user.pharmacyId !== id) {
+      throw new ForbiddenException('Access denied');
+    }
     return this.pharmacies.findById(id);
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Patch('pharmacies/:id')
-  async update(@Param('id') id: string, @Body() dto: UpdatePharmacyDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdatePharmacyDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    if (user.scope !== 'SUPER_ADMIN' && user.pharmacyId !== id) {
+      throw new ForbiddenException('Access denied');
+    }
     return this.pharmacies.update(id, dto);
   }
 
@@ -124,7 +135,11 @@ export class PharmaciesController {
   async changePassword(
     @Param('id') id: string,
     @Body() dto: ChangePharmacyPasswordDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
+    if (user.scope !== 'SUPER_ADMIN' && user.pharmacyId !== id) {
+      throw new ForbiddenException('Access denied');
+    }
     return this.pharmacies.changePassword(id, dto);
   }
 
@@ -135,13 +150,23 @@ export class PharmaciesController {
   async createCashbackRule(
     @Param('id') pharmacyId: string,
     @Body() dto: CreateCashbackRuleDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
+    if (user.scope !== 'SUPER_ADMIN' && user.pharmacyId !== pharmacyId) {
+      throw new ForbiddenException('Access denied');
+    }
     return this.pharmacies.createCashbackRule(pharmacyId, dto);
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get('pharmacies/:id/cashback-rules')
-  async getCashbackRules(@Param('id') pharmacyId: string) {
+  async getCashbackRules(
+    @Param('id') pharmacyId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    if (user.scope !== 'SUPER_ADMIN' && user.pharmacyId !== pharmacyId) {
+      throw new ForbiddenException('Access denied');
+    }
     return this.pharmacies.getCashbackRules(pharmacyId);
   }
 
@@ -150,13 +175,17 @@ export class PharmaciesController {
   async updateCashbackRule(
     @Param('ruleId') ruleId: string,
     @Body() dto: UpdateCashbackRuleDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.pharmacies.updateCashbackRule(ruleId, dto);
+    return this.pharmacies.updateCashbackRule(ruleId, dto, user.pharmacyId, user.scope);
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Delete('cashback-rules/:ruleId')
-  async deleteCashbackRule(@Param('ruleId') ruleId: string) {
-    return this.pharmacies.deleteCashbackRule(ruleId);
+  async deleteCashbackRule(
+    @Param('ruleId') ruleId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.pharmacies.deleteCashbackRule(ruleId, user.pharmacyId, user.scope);
   }
 }

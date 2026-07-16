@@ -153,6 +153,24 @@ model Employee {
 // ──────────────────────────────────────────────
 // Users (Customers)
 // ──────────────────────────────────────────────
+// Super Admins (System-level users)
+enum SuperAdminStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model SuperAdmin {
+  id           String            @id @default(uuid()) @db.Uuid
+  fullName     String            @map("full_name") @db.VarChar(150)
+  login        String            @unique @db.VarChar(60)
+  passwordHash String            @map("password_hash") @db.VarChar(255)
+  status       SuperAdminStatus  @default(ACTIVE)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  @@map("super_admins")
+}
+
 enum UserStatus {
   PENDING_CARD
   ACTIVE

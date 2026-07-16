@@ -99,16 +99,25 @@ export class UsersService {
   async findByPhone(phone: string) {
     const user = await this.prisma.client.user.findUnique({
       where: { phone },
+      select: {
+        id: true, firstName: true, lastName: true, phone: true,
+        status: true, createdAt: true,
+      },
     });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
   async update(id: string, dto: UpdateUserDto) {
-    const user = await this.prisma.client.user.findUnique({ where: { id } });
+    const user = await this.prisma.client.user.findUnique({
+      where: { id },
+      select: { id: true, phone: true },
+    });
     if (!user) throw new NotFoundException('User not found');
 
-    const data: any = { ...dto };
+    const data: any = {};
+    if (dto.firstName !== undefined) data.firstName = dto.firstName;
+    if (dto.lastName !== undefined) data.lastName = dto.lastName;
     if (dto.phone) {
       const existing = await this.prisma.client.user.findUnique({
         where: { phone: dto.phone },
