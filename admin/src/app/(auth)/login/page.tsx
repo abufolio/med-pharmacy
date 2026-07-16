@@ -35,7 +35,7 @@ export default function LoginPage() {
       toast.success(`Xush kelibsiz, ${user.fullName || user.login}!`);
 
       if (user.role === 'SUPER_ADMIN') {
-        router.push('/admin');
+        router.push('/');
       } else {
         router.push('/pharmacy');
       }

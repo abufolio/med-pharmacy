@@ -33,18 +33,18 @@ interface NavItem {
 }
 
 const superAdminNav: NavItem[] = [
-  { label: 'Dashboard', href: '/admin', icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: 'Dorixonalar', href: '/admin/pharmacies', icon: <Building2 className="h-4 w-4" /> },
-  { label: 'Foydalanuvchilar', href: '/admin/users', icon: <Users className="h-4 w-4" /> },
-  { label: 'Kartalar', href: '/admin/cards', icon: <CreditCard className="h-4 w-4" /> },
-  { label: 'Tranzaksiyalar', href: '/admin/transactions', icon: <ArrowRightLeft className="h-4 w-4" /> },
-  { label: 'Cashback', href: '/admin/cashback', icon: <Percent className="h-4 w-4" /> },
-  { label: 'Yechib olish', href: '/admin/withdraw', icon: <Wallet className="h-4 w-4" /> },
-  { label: 'Promo kodlar', href: '/admin/promocodes', icon: <Ticket className="h-4 w-4" /> },
-  { label: 'Rollar', href: '/admin/roles', icon: <KeyRound className="h-4 w-4" /> },
-  { label: 'Hisobotlar', href: '/admin/reports', icon: <BarChart3 className="h-4 w-4" /> },
-  { label: 'Audit log', href: '/admin/audit', icon: <ShieldAlert className="h-4 w-4" /> },
-  { label: 'Sozlamalar', href: '/admin/settings', icon: <Settings className="h-4 w-4" /> },
+  { label: 'Dashboard', href: '/', icon: <LayoutDashboard className="h-4 w-4" /> },
+  { label: 'Dorixonalar', href: '/pharmacies', icon: <Building2 className="h-4 w-4" /> },
+  { label: 'Foydalanuvchilar', href: '/users', icon: <Users className="h-4 w-4" /> },
+  { label: 'Kartalar', href: '/cards', icon: <CreditCard className="h-4 w-4" /> },
+  { label: 'Tranzaksiyalar', href: '/transactions', icon: <ArrowRightLeft className="h-4 w-4" /> },
+  { label: 'Cashback', href: '/cashback', icon: <Percent className="h-4 w-4" /> },
+  { label: 'Yechib olish', href: '/withdraw', icon: <Wallet className="h-4 w-4" /> },
+  { label: 'Promo kodlar', href: '/promocodes', icon: <Ticket className="h-4 w-4" /> },
+  { label: 'Rollar', href: '/roles', icon: <KeyRound className="h-4 w-4" /> },
+  { label: 'Hisobotlar', href: '/reports', icon: <BarChart3 className="h-4 w-4" /> },
+  { label: 'Audit log', href: '/audit', icon: <ShieldAlert className="h-4 w-4" /> },
+  { label: 'Sozlamalar', href: '/settings', icon: <Settings className="h-4 w-4" /> },
 ];
 
 export function AdminSidebar() {

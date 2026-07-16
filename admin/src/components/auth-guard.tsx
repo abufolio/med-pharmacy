@@ -15,7 +15,7 @@ export function AuthGuard({ children, requiredRole }: AuthGuardProps) {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace('/auth/login');
+      router.replace('/login');
     }
   }, [isAuthenticated, router]);
 
@@ -24,7 +24,7 @@ export function AuthGuard({ children, requiredRole }: AuthGuardProps) {
   }
 
   if (requiredRole && user?.role !== requiredRole && user?.role !== 'SUPER_ADMIN') {
-    router.replace('/auth/login');
+    router.replace('/login');
     return null;
   }
 

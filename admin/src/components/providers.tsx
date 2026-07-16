@@ -40,8 +40,9 @@ export function Providers({ children }: { children: ReactNode }) {
         enableSystem
         disableTransitionOnChange
       >
-        <AuthInitializer />
-        {children}
+        <AuthInitializer>
+          {children}
+        </AuthInitializer>
         <Toaster richColors position="top-right" />
       </ThemeProvider>
     </QueryClientProvider>
