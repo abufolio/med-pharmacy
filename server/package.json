@@ -10,9 +10,7 @@
   "scripts": {
     "dev:api": "nest start api --watch",
     "dev:worker": "nest start worker --watch",
-    "dev:bot": "nest start bot --watch",
     "build": "nest build",
-    "build:bot": "nest build bot",
     "prisma:generate": "cd packages/database && npx prisma generate",
     "prisma:migrate": "cd packages/database && npx prisma migrate dev",
     "prisma:studio": "cd packages/database && npx prisma studio",
