@@ -355,8 +355,35 @@ export async function showSettings(ctx: BotContext) {
 }
 
 export async function showLanguageSettings(ctx: BotContext) {
-  const { showLanguageSelection } = await import("./register");
-  await showLanguageSelection(ctx);
+  ctx.session.step = "settings_lang_select";
+
+  const keyboard = new Keyboard()
+    .text(t("uz", "uz")).row()
+    .text(t("uz", "ru")).row()
+    .text(t("uz", "en"))
+    .resized().oneTime();
+
+  await ctx.reply(t("uz", "lang_select"), { reply_markup: keyboard });
+}
+
+export async function handleSettingsLanguage(ctx: BotContext, text: string) {
+  const langMap: Record<string, LanguageCode> = {
+    "🇺🇿 O'zbekcha": "uz",
+    "🇷🇺 Русский": "ru",
+    "🇬🇧 English": "en",
+  };
+
+  const lang = langMap[text];
+  if (!lang) {
+    await ctx.reply(t("uz", "lang_select"));
+    return;
+  }
+
+  ctx.session.lang = lang;
+  ctx.session.step = "main_menu";
+
+  await ctx.reply(t(lang, "lang_selected"));
+  await showMainMenu(ctx);
 }
 
 // ── Support ────────────────────────────────────────────

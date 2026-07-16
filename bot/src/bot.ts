@@ -31,6 +31,7 @@ import {
   showReferral,
   showSettings,
   showLanguageSettings,
+  handleSettingsLanguage,
   showSupport,
   handleHistoryPagination,
 } from "./handlers/menu";
@@ -190,6 +191,10 @@ bot.on("message:text", async (ctx) => {
     // ── Registration Flow ──
     case "lang_select":
       await handleLanguageSelection(ctx, text);
+      break;
+
+    case "settings_lang_select":
+      await handleSettingsLanguage(ctx, text);
       break;
 
     case "enter_firstname":
