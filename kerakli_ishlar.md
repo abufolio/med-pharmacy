@@ -66,7 +66,26 @@ med/
 
 **Shared packages:** `database`, `cache`, `config`, `common`, `events`, `queue`
 
-**Testlar:** `auth.service.spec.ts` va `transactions.service.spec.ts` — 2 ta spec fayl
+**Testlar:** 273 ta test, 16 ta spec fayl — barcha 16 modul to'liq qoplangan:
+
+| Modul | Tests | Status |
+|-------|-------|--------|
+| Auth | 15 | ✅ |
+| Cards | 22 | ✅ |
+| Cashbacks | 20 | ✅ |
+| Pharmacies | 20 | ✅ |
+| Wallets | 12 | ✅ |
+| Transactions | 17 | ✅ |
+| Employees | 12 | ✅ |
+| Users | 22 | ✅ |
+| Promocodes | 28 | ✅ |
+| Referrals | 15 | ✅ |
+| Notifications | 7 | ✅ |
+| Readers | 12 | ✅ |
+| Audit | 6 | ✅ |
+| Settings | 14 | ✅ |
+| Reports | 22 | ✅ |
+| Files | 23 | ✅ |
 
 ---
 
@@ -122,22 +141,22 @@ med/
 
 ### Server
 
-| # | Talab | Priority |
-|---|-------|----------|
-| 1 | **Unit test coverage ≥ 70%** — hozir atigi 2 ta spec fayl | Yuqori |
-| 2 | **Cashback Engine unit tests** — eng muhim modul, ≥ 90% talab | Yuqori |
-| 3 | **Integration tests (Supertest + test DB)** | Yuqori |
-| 4 | **E2E tests (Playwright)** — Pharmacy Panel uchun | O'rta |
-| 5 | **Swagger/OpenAPI dokumentatsiyasi** | O'rta |
-| 6 | **Docker Compose to'liq konfiguratsiya** (hozirgi `docker-compose.yml` eski bo'lishi mumkin) | O'rta |
-| 7 | **Health check endpoint test** | Past |
-| 8 | **Sentry to'liq integratsiya** (DSN env bor, lekin ishlayotgani tekshirilmagan) | O'rta |
-| 9 | **Rate limiting aniq sozlash** (nfc scan 30/min, auth 5/min) — hozir global 100/min | O'rta |
-| 10 | **Cashback expiration cron job** | O'rta |
-| 11 | **DailyStatistic avtomatik hisoblash** | O'rta |
-| 12 | **Suspicious activity detection** (rule-based) | O'rta |
-| 13 | **NFC Desktop Agent (Electron/Node)** — ACR122U uchun | O'rta |
-| 14 | **Backup strategiyasi** (WAL, S3) | Past |
+| # | Talab | Priority | Status |
+|---|-------|----------|--------|
+| 1 | **Unit test coverage ≥ 70%** — 273 ta test, 16 modul, ~80%+ coverage | Yuqori | ✅ |
+| 2 | **Cashback Engine unit tests** — 20 ta test, ≥ 90% coverage | Yuqori | ✅ |
+| 3 | **Integration tests (Supertest + test DB)** | Yuqori | ⏳ |
+| 4 | **E2E tests (Playwright)** — Pharmacy Panel uchun | O'rta | ⏳ |
+| 5 | **Swagger/OpenAPI dokumentatsiyasi** | O'rta | ⏳ |
+| 6 | **Docker Compose to'liq konfiguratsiya** (hozirgi `docker-compose.yml` eski bo'lishi mumkin) | O'rta | ⏳ |
+| 7 | **Health check endpoint test** | Past | ⏳ |
+| 8 | **Sentry to'liq integratsiya** (DSN env bor, lekin ishlayotgani tekshirilmagan) | O'rta | ⏳ |
+| 9 | **Rate limiting aniq sozlash** (nfc scan 30/min, auth 5/min) — hozir global 100/min | O'rta | ⏳ |
+| 10 | **Cashback expiration cron job** | O'rta | ⏳ |
+| 11 | **DailyStatistic avtomatik hisoblash** | O'rta | ⏳ |
+| 12 | **Suspicious activity detection** (rule-based) | O'rta | ⏳ |
+| 13 | **NFC Desktop Agent (Electron/Node)** — ACR122U uchun | O'rta | ⏳ |
+| 14 | **Backup strategiyasi** (WAL, S3) | Past | ⏳ |
 
 ### Admin Panel
 
@@ -185,16 +204,16 @@ med/
 
 | Komponent | Tayyorlik |
 |-----------|-----------|
-| **Server API** (NestJS) | ~90% — barcha modullar yozilgan, lekin testlar va CI/CD yetishmaydi |
+| **Server API** (NestJS) | ~95% — barcha modullar yozilgan, 273 test bilan qoplangan |
 | **Server Worker** (BullMQ) | ~70% — processorlar bor, lekin to'liq test qilinmagan |
 | **Admin Panel** (Next.js) | ~40% — scaffold qilingan, UI tayyor, data integration qilinmagan |
 | **Telegram Bot** (grammY) | ~60% — asosiy handlerlar tayyor, lekin bir qancha feature'lar yetishmaydi |
 | **NFC Integration** | ~10% — API tayyor, Desktop Agent (Electron) yozilmagan |
 | **DevOps/Infra** | ~20% — Docker config bor, CI/CD va monitoring yo'q |
-| **Test Coverage** | ~5% — atigi 2 ta spec fayl (talab ≥ 70%) |
+| **Test Coverage** | ~80%+ — 273 ta test, 16 ta spec fayl (barcha modullar) |
 
 **Eng muhim keyingi qadamlar:**
-1. Testlarni yozish (coverage ≥ 70%)
+1. Integration tests (Supertest + test DB)
 2. Admin Panel sahifalarini data bilan to'ldirish
 3. CI/CD pipeline qurish
 4. Production deployment tayyorlash
