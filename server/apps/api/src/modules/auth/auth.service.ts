@@ -47,6 +47,16 @@ export class AuthService {
       return this.handlePharmacyLogin(pharmacy, password);
     }
 
+    // Try super admin login
+    const superAdmin = await this.prisma.client.superAdmin.findUnique({
+      where: { login },
+      select: { id: true, login: true, passwordHash: true, status: true, fullName: true },
+    });
+
+    if (superAdmin) {
+      return this.handleSuperAdminLogin(superAdmin, password);
+    }
+
     // Try employee login
     const employee = await this.prisma.client.employee.findUnique({
       where: { login },
@@ -189,8 +199,68 @@ export class AuthService {
   }
 
   // ──────────────────────────────────────────────
+  // Me — get current user profile
+  // ──────────────────────────────────────────────
+  async me(userId: string, role: string) {
+    if (role === 'SUPER_ADMIN') {
+      const admin = await this.prisma.client.superAdmin.findUnique({
+        where: { id: userId },
+        select: { id: true, login: true, fullName: true, status: true, createdAt: true },
+      });
+      if (!admin) throw new UnauthorizedException('User not found');
+      return { ...admin, role: 'SUPER_ADMIN' };
+    }
+
+    const employee = await this.prisma.client.employee.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, login: true, fullName: true, status: true,
+        pharmacyId: true,
+        role: { select: { id: true, name: true, scope: true } },
+        pharmacy: { select: { id: true, name: true } },
+      },
+    });
+    if (!employee) throw new UnauthorizedException('User not found');
+    return { ...employee, role: employee.role.name };
+  }
+
+  // ──────────────────────────────────────────────
   // Private Helpers
   // ──────────────────────────────────────────────
+
+  private async handleSuperAdminLogin(
+    admin: { id: string; login: string; passwordHash: string; status: string; fullName: string },
+    password: string,
+  ): Promise<LoginResponse> {
+    if (admin.status !== 'ACTIVE') {
+      throw new UnauthorizedException('Super admin account is not active');
+    }
+
+    const valid = await bcrypt.compare(password, admin.passwordHash);
+    if (!valid) {
+      this.audit.log('LOGIN_FAILED', 'super_admin', admin.id);
+      throw new UnauthorizedException('Invalid login or password');
+    }
+
+    const tokens = await this.generateTokens({
+      sub: admin.id,
+      role: 'SUPER_ADMIN',
+      scope: 'SYSTEM',
+      type: 'access',
+    });
+
+    this.audit.log('SUPER_ADMIN_LOGIN', 'super_admin', admin.id);
+
+    return {
+      tokens,
+      user: {
+        id: admin.id,
+        login: admin.login,
+        role: 'SUPER_ADMIN',
+        fullName: admin.fullName,
+      },
+    };
+  }
 
   private async handlePharmacyLogin(
     pharmacy: { id: string; login: string; passwordHash: string; status: string; name: string },

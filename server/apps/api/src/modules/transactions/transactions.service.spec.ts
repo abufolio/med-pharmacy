@@ -70,8 +70,9 @@ describe('TransactionsService', () => {
 
   beforeEach(async () => {
     const txMock = {
-      transaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn() },
+      transaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn() },
       cashback: { create: jest.fn(), update: jest.fn() },
+      cashbackRule: { findFirst: jest.fn() },
       wallet: { upsert: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
       walletTransaction: { create: jest.fn() },
     };
@@ -81,7 +82,7 @@ describe('TransactionsService', () => {
         user: { findUnique: jest.fn() },
         pharmacy: { findUnique: jest.fn() },
         cashbackRule: { findFirst: jest.fn() },
-        transaction: { findUnique: jest.fn(), findMany: jest.fn(), count: jest.fn() },
+        transaction: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), count: jest.fn() },
         $transaction: jest.fn(),
       },
     };
@@ -131,7 +132,7 @@ describe('TransactionsService', () => {
 
       prisma.client.user.findUnique.mockResolvedValue(mockUser);
       prisma.client.pharmacy.findUnique.mockResolvedValue(mockPharmacy);
-      prisma.client.cashbackRule.findFirst.mockResolvedValue(mockRule);
+      (txMock as any).cashbackRule = { findFirst: jest.fn().mockResolvedValue(mockRule) };
       mockTransactionCallback(txMock);
 
       const result = await service.create(dto);
@@ -150,10 +151,8 @@ describe('TransactionsService', () => {
         cashbackRule: 'PERCENT',
       });
       expect(audit.log).toHaveBeenCalledWith('CASHBACK_ACCRUED', 'cashback', 'cb-1', undefined, {
-        userId: 'user-1',
-        pharmacyId: 'ph-1',
-        amount: 2500,
         transactionId: 'tx-1',
+        amount: 2500,
       });
     });
 
@@ -167,7 +166,7 @@ describe('TransactionsService', () => {
 
       prisma.client.user.findUnique.mockResolvedValue(mockUser);
       prisma.client.pharmacy.findUnique.mockResolvedValue(mockPharmacy);
-      prisma.client.cashbackRule.findFirst.mockResolvedValue(null);
+      (txMock as any).cashbackRule = { findFirst: jest.fn().mockResolvedValue(null) };
       mockTransactionCallback(txMock);
 
       const result = await service.create(dto);
@@ -187,7 +186,7 @@ describe('TransactionsService', () => {
 
       prisma.client.user.findUnique.mockResolvedValue(mockUser);
       prisma.client.pharmacy.findUnique.mockResolvedValue(mockPharmacy);
-      prisma.client.cashbackRule.findFirst.mockResolvedValue(mockRule);
+      (txMock as any).cashbackRule = { findFirst: jest.fn().mockResolvedValue(mockRule) };
       mockTransactionCallback(txMock);
 
       const result = await service.create({ ...dto, amount: 5000 });
@@ -240,12 +239,12 @@ describe('TransactionsService', () => {
 
       prisma.client.user.findUnique.mockResolvedValue(mockUser);
       prisma.client.pharmacy.findUnique.mockResolvedValue(mockPharmacy);
-      prisma.client.cashbackRule.findFirst.mockResolvedValue({
+      (txMock as any).cashbackRule = { findFirst: jest.fn().mockResolvedValue({
         ...mockRule,
         type: 'PERCENT',
         value: 2.5,
         maxCashback: null,
-      });
+      })};
       mockTransactionCallback(txMock);
 
       const result = await service.create({ ...dto, amount: 50000 });
@@ -264,12 +263,12 @@ describe('TransactionsService', () => {
 
       prisma.client.user.findUnique.mockResolvedValue(mockUser);
       prisma.client.pharmacy.findUnique.mockResolvedValue(mockPharmacy);
-      prisma.client.cashbackRule.findFirst.mockResolvedValue({
+      (txMock as any).cashbackRule = { findFirst: jest.fn().mockResolvedValue({
         ...mockRule,
         type: 'PERCENT',
         value: 10,       // 10%
         maxCashback: 3000,  // capped at 3000
-      });
+      })};
       mockTransactionCallback(txMock);
 
       const result = await service.create({ ...dto, amount: 100000 });
@@ -288,13 +287,13 @@ describe('TransactionsService', () => {
 
       prisma.client.user.findUnique.mockResolvedValue(mockUser);
       prisma.client.pharmacy.findUnique.mockResolvedValue(mockPharmacy);
-      prisma.client.cashbackRule.findFirst.mockResolvedValue({
+      (txMock as any).cashbackRule = { findFirst: jest.fn().mockResolvedValue({
         ...mockRule,
         type: 'FIXED',
         value: 2000,
         minPurchase: 0,
         maxCashback: null,
-      });
+      })};
       mockTransactionCallback(txMock);
 
       const result = await service.create({ ...dto, amount: 30000 });
@@ -313,13 +312,13 @@ describe('TransactionsService', () => {
 
       prisma.client.user.findUnique.mockResolvedValue(mockUser);
       prisma.client.pharmacy.findUnique.mockResolvedValue(mockPharmacy);
-      prisma.client.cashbackRule.findFirst.mockResolvedValue({
+      (txMock as any).cashbackRule = { findFirst: jest.fn().mockResolvedValue({
         ...mockRule,
         type: 'CAMPAIGN',
         value: 5000,
         maxCashback: 10000,
         minPurchase: 0,
-      });
+      })};
       mockTransactionCallback(txMock);
 
       const result = await service.create({ ...dto, amount: 50000 });
@@ -355,7 +354,7 @@ describe('TransactionsService', () => {
         pharmacy: { id: 'ph-1', name: 'Test Pharmacy' },
         cashbacks: [mockCashback],
       };
-      prisma.client.transaction.findUnique.mockResolvedValue(mockTx);
+      prisma.client.transaction.findFirst.mockResolvedValue(mockTx);
 
       const result = await service.findById('tx-1');
 
@@ -364,7 +363,7 @@ describe('TransactionsService', () => {
     });
 
     it('should throw NotFoundException if not found', async () => {
-      prisma.client.transaction.findUnique.mockResolvedValue(null);
+      prisma.client.transaction.findFirst.mockResolvedValue(null);
 
       await expect(service.findById('tx-invalid')).rejects.toThrow(NotFoundException);
     });
@@ -386,7 +385,7 @@ describe('TransactionsService', () => {
         walletTransaction: { create: jest.fn().mockResolvedValue({}) },
       };
 
-      prisma.client.transaction.findUnique.mockResolvedValue({
+      prisma.client.transaction.findFirst.mockResolvedValue({
         ...mockTransaction,
         userId: 'user-1',
         cashbacks: [mockCashback],
@@ -415,7 +414,7 @@ describe('TransactionsService', () => {
     });
 
     it('should throw BadRequestException if already reversed', async () => {
-      prisma.client.transaction.findUnique.mockResolvedValue({
+      prisma.client.transaction.findFirst.mockResolvedValue({
         ...mockTransaction,
         status: 'REVERSED',
         cashbacks: [],

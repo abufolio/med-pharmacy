@@ -18,23 +18,24 @@ export class EmployeesService {
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
     const employee = await this.prisma.client.employee.create({
-      data: { pharmacyId, ...dto, passwordHash },
+      data: { ...dto, pharmacyId, passwordHash },
       select: { id: true, login: true, fullName: true, status: true, role: { select: { name: true } }, createdAt: true },
     });
     this.audit.log('EMPLOYEE_CREATED', 'employee', employee.id);
     return employee;
   }
 
-  async findAll(pharmacyId: string, page = 1, limit = 50) {
+  async findAll(pharmacyId?: string, page = 1, limit = 50) {
+    const where = pharmacyId ? { pharmacyId } : {};
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.client.employee.findMany({
-        where: { pharmacyId },
+        where,
         skip, take: limit,
         select: { id: true, login: true, fullName: true, status: true, role: { select: { name: true } }, createdAt: true },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.client.employee.count({ where: { pharmacyId } }),
+      this.prisma.client.employee.count({ where }),
     ]);
     return { data, total, page, limit };
   }

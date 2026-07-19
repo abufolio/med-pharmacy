@@ -36,25 +36,25 @@ function createPrismaExtensions() {
         $allModels: {
           async findMany({ model, args, query }) {
             if (hasDeletedAt(model)) {
-              args.where = { ...args.where, deletedAt: null } as any;
+              args.where = Object.assign(args.where ?? {}, { deletedAt: null }) as any;
             }
             return query(args);
           },
           async findFirst({ model, args, query }) {
             if (hasDeletedAt(model)) {
-              args.where = { ...args.where, deletedAt: null } as any;
+              args.where = Object.assign(args.where ?? {}, { deletedAt: null }) as any;
             }
             return query(args);
           },
           async findUnique({ model, args, query }) {
             if (hasDeletedAt(model)) {
-              args.where = { ...args.where, deletedAt: null } as any;
+              args.where = Object.assign(args.where ?? {}, { deletedAt: null }) as any;
             }
             return query(args);
           },
           async count({ model, args, query }) {
             if (hasDeletedAt(model)) {
-              args.where = { ...args.where, deletedAt: null } as any;
+              args.where = Object.assign(args.where ?? {}, { deletedAt: null }) as any;
             }
             return query(args);
           },
@@ -89,7 +89,7 @@ function createPrismaExtensions() {
             if (hasPharmacyId(model)) {
               const pid = getPharmacyId();
               if (pid) {
-                args.where = { ...args.where, pharmacyId: pid } as any;
+                args.where = Object.assign(args.where ?? {}, { pharmacyId: pid }) as any;
               }
             }
             return query(args);
@@ -98,7 +98,7 @@ function createPrismaExtensions() {
             if (hasPharmacyId(model)) {
               const pid = getPharmacyId();
               if (pid) {
-                args.where = { ...args.where, pharmacyId: pid } as any;
+                args.where = Object.assign(args.where ?? {}, { pharmacyId: pid }) as any;
               }
             }
             return query(args);
@@ -107,7 +107,7 @@ function createPrismaExtensions() {
             if (hasPharmacyId(model)) {
               const pid = getPharmacyId();
               if (pid) {
-                args.where = { ...args.where, pharmacyId: pid } as any;
+                args.where = Object.assign(args.where ?? {}, { pharmacyId: pid }) as any;
               }
             }
             return query(args);
@@ -116,7 +116,7 @@ function createPrismaExtensions() {
             if (hasPharmacyId(model)) {
               const pid = getPharmacyId();
               if (pid) {
-                args.where = { ...args.where, pharmacyId: pid } as any;
+                args.where = Object.assign(args.where ?? {}, { pharmacyId: pid }) as any;
               }
             }
             return query(args);
@@ -148,7 +148,7 @@ function createPrismaExtensions() {
             if (hasPharmacyId(model)) {
               const pid = getPharmacyId();
               if (pid) {
-                args.where = { ...args.where, pharmacyId: pid } as any;
+                args.where = Object.assign(args.where ?? {}, { pharmacyId: pid }) as any;
               }
             }
             return query(args);
@@ -157,7 +157,7 @@ function createPrismaExtensions() {
             if (hasPharmacyId(model)) {
               const pid = getPharmacyId();
               if (pid) {
-                args.where = { ...args.where, pharmacyId: pid } as any;
+                args.where = Object.assign(args.where ?? {}, { pharmacyId: pid }) as any;
               }
             }
             return query(args);
@@ -166,7 +166,7 @@ function createPrismaExtensions() {
             if (hasPharmacyId(model)) {
               const pid = getPharmacyId();
               if (pid) {
-                args.where = { ...args.where, pharmacyId: pid } as any;
+                args.where = Object.assign(args.where ?? {}, { pharmacyId: pid }) as any;
               }
             }
             return query(args);
@@ -175,7 +175,7 @@ function createPrismaExtensions() {
             if (hasPharmacyId(model)) {
               const pid = getPharmacyId();
               if (pid) {
-                args.where = { ...args.where, pharmacyId: pid } as any;
+                args.where = Object.assign(args.where ?? {}, { pharmacyId: pid }) as any;
               }
             }
             return query(args);

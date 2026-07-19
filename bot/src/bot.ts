@@ -1,7 +1,9 @@
 import { Bot, GrammyError, HttpError } from "grammy";
+import { limit } from "@grammyjs/ratelimiter";
 import { BotContext } from "./types";
 import { config } from "./config";
 import { sessionMiddleware } from "./middlewares/session";
+import { sessionExpiry } from "./middlewares/guard";
 import { t } from "./utils/i18n";
 import { userStore } from "./utils/store";
 
@@ -29,9 +31,25 @@ import {
   showReferral,
   showSettings,
   showLanguageSettings,
+  handleSettingsLanguage,
   showSupport,
   handleHistoryPagination,
 } from "./handlers/menu";
+import {
+  showCardInfo,
+  showCardHistory,
+  handleCardHistoryPagination,
+} from "./handlers/card";
+import {
+  showNotificationHistory,
+  handleNotifPagination,
+  markAllNotifsRead,
+} from "./handlers/notifications";
+import {
+  showStats,
+  startBroadcast,
+  handleBroadcastText,
+} from "./handlers/admin";
 import {
   startLogin,
   handleLoginPassword,
@@ -44,6 +62,34 @@ export const bot = new Bot<BotContext>(config.bot.token);
 
 // ── Register Middleware ──────────────────────────────
 bot.use(sessionMiddleware);
+
+// ── Rate Limiter (20 msg/min per user) ───────────────
+// TechSpec 15.4: flood control via @grammyjs/ratelimiter
+bot.use(
+  limit({
+    timeFrame: 60_000,       // 1 minute window
+    limit: 20,               // max 20 messages
+    onLimitExceeded: async (ctx) => {
+      await ctx.reply(
+        "⏳ Juda ko'p so'rov! Iltimos, 1 daqiqa kutib, qaytadan urinib ko'ring.\n" +
+        "Слишком много запросов! Подождите 1 минуту.\n" +
+        "Too many requests! Please wait 1 minute.",
+      );
+    },
+    // Exclude admin commands from rate limiting
+    keyGenerator: (ctx) => {
+      if (!ctx.from) return "";
+      // Admin commands bypass rate limit
+      if (ctx.message?.text?.startsWith("/stats") || ctx.message?.text?.startsWith("/broadcast")) {
+        if (config.admin.ids.includes(ctx.from.id)) return "";
+      }
+      return `${ctx.from.id}`;
+    },
+  }),
+);
+
+// ── Session expiry check ─────────────────────────────
+bot.use(sessionExpiry);
 
 // ── Error Handler ────────────────────────────────────
 bot.catch((err) => {
@@ -78,7 +124,8 @@ bot.command("start", async (ctx) => {
   // Check for referral deep link: /start ref_<userId>
   const args = ctx.match;
   if (args && args.startsWith("ref_")) {
-    // Store referrer ID in session for later use after registration
+    const referrerUserId = args.replace("ref_", "");
+    // Store referrer user ID in session for later use after registration
     ctx.session.tempRegistration = {
       firstName: "",
       lastName: "",
@@ -87,6 +134,7 @@ bot.command("start", async (ctx) => {
       addressLat: null,
       addressLng: null,
       password: "",
+      referrerUserId,
     };
   }
 
@@ -103,6 +151,17 @@ bot.command("login", async (ctx) => {
 bot.command("logout", async (ctx) => {
   if (!ctx.from) return;
   await startLogout(ctx);
+});
+
+// ── Admin Commands ───────────────────────────────────
+bot.command("stats", async (ctx) => {
+  if (!ctx.from) return;
+  await showStats(ctx);
+});
+
+bot.command("broadcast", async (ctx) => {
+  if (!ctx.from) return;
+  await startBroadcast(ctx);
 });
 
 // ── Text Handler (routing by session step) ───────────
@@ -132,6 +191,10 @@ bot.on("message:text", async (ctx) => {
     // ── Registration Flow ──
     case "lang_select":
       await handleLanguageSelection(ctx, text);
+      break;
+
+    case "settings_lang_select":
+      await handleSettingsLanguage(ctx, text);
       break;
 
     case "enter_firstname":
@@ -172,6 +235,11 @@ bot.on("message:text", async (ctx) => {
     // ── Promo ──
     case "promo_enter":
       await requireAuth(ctx, () => handlePromoCode(ctx, text));
+      break;
+
+    // ── Admin Broadcast ──
+    case "broadcast_text":
+      await handleBroadcastText(ctx, text);
       break;
 
     default:
@@ -230,6 +298,70 @@ bot.on("callback_query:data", async (ctx) => {
     return;
   }
 
+  // ── Card history pagination: card_hist_page:0, ... ──
+  if (data.startsWith("card_hist_page:")) {
+    const page = parseInt(data.split(":")[1], 10);
+    if (!isNaN(page)) {
+      await handleCardHistoryPagination(ctx, page);
+    }
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  // ── Card → History: card_history:0, ... ──
+  if (data.startsWith("card_history:")) {
+    const page = parseInt(data.split(":")[1], 10);
+    await ctx.answerCallbackQuery();
+    try { await ctx.deleteMessage(); } catch (_) { /* ignore */ }
+    await showCardHistory(ctx, isNaN(page) ? 0 : page);
+    return;
+  }
+
+  // ── Card / Card History → Back ──
+  if (data === "card_back") {
+    await ctx.answerCallbackQuery();
+    try { await ctx.deleteMessage(); } catch (_) { /* ignore */ }
+    await showMainMenu(ctx);
+    return;
+  }
+
+  // ── Card history current-page label (no-op) ──
+  if (data === "card_hist_page_cur") {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  // ── Notification history pagination ──
+  if (data.startsWith("notif_page:")) {
+    const page = parseInt(data.split(":")[1], 10);
+    if (!isNaN(page)) {
+      await handleNotifPagination(ctx, page);
+    }
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  // ── Mark all notifications as read ──
+  if (data === "notif_read_all") {
+    await ctx.answerCallbackQuery();
+    await markAllNotifsRead(ctx);
+    return;
+  }
+
+  // ── Notification history back button ──
+  if (data === "notif_back") {
+    await ctx.answerCallbackQuery();
+    try { await ctx.deleteMessage(); } catch (_) { /* ignore */ }
+    await showMainMenu(ctx);
+    return;
+  }
+
+  // ── Notification current-page label (no-op) ──
+  if (data === "notif_page_cur") {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
   // ── Current-page label button (no-op) ──
   if (data === "hist_page_cur") {
     await ctx.answerCallbackQuery();
@@ -255,6 +387,10 @@ async function handleMainMenuAction(ctx: BotContext, text: string) {
     [t("uz", "btn_profile")]: () => showProfile(ctx),
     [t("ru", "btn_profile")]: () => showProfile(ctx),
     [t("en", "btn_profile")]: () => showProfile(ctx),
+    // Card
+    [t("uz", "btn_card")]: () => showCardInfo(ctx),
+    [t("ru", "btn_card")]: () => showCardInfo(ctx),
+    [t("en", "btn_card")]: () => showCardInfo(ctx),
     // Balance
     [t("uz", "btn_balance")]: () => showBalance(ctx),
     [t("ru", "btn_balance")]: () => showBalance(ctx),
@@ -279,6 +415,10 @@ async function handleMainMenuAction(ctx: BotContext, text: string) {
     [t("uz", "btn_settings")]: () => showSettings(ctx),
     [t("ru", "btn_settings")]: () => showSettings(ctx),
     [t("en", "btn_settings")]: () => showSettings(ctx),
+    // Notifications
+    [t("uz", "btn_notifications")]: () => showNotificationHistory(ctx),
+    [t("ru", "btn_notifications")]: () => showNotificationHistory(ctx),
+    [t("en", "btn_notifications")]: () => showNotificationHistory(ctx),
     // Support
     [t("uz", "btn_support")]: () => showSupport(ctx),
     [t("ru", "btn_support")]: () => showSupport(ctx),

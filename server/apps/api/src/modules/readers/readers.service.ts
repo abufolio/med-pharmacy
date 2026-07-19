@@ -63,11 +63,21 @@ export class ReadersService {
     return updated;
   }
 
-  async updateStatus(serialNumber: string, status: 'ONLINE' | 'OFFLINE' | 'FAULTY') {
+  async updateStatus(
+    serialNumber: string,
+    status: 'ONLINE' | 'OFFLINE' | 'FAULTY',
+    userPharmacyId?: string,
+    userScope?: string,
+  ) {
     const reader = await this.prisma.client.reader.findUnique({
       where: { serialNumber },
     });
     if (!reader) throw new NotFoundException('Reader not found');
+
+    // PHARMACY_ADMIN can only update readers in their own pharmacy
+    if (userScope !== 'SUPER_ADMIN' && reader.pharmacyId !== userPharmacyId) {
+      throw new NotFoundException('Reader not found');
+    }
 
     return this.prisma.client.reader.update({
       where: { serialNumber },

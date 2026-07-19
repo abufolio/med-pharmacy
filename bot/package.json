@@ -12,10 +12,12 @@
     "prisma:studio": "npx prisma studio"
   },
   "dependencies": {
+    "@grammyjs/ratelimiter": "^1.2.1",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.7",
     "grammy": "^1.34.2",
+    "ioredis": "^5.11.1",
     "nanoid": "^5.0.9",
     "pg": "^8.22.0",
     "zod": "^3.24.1"

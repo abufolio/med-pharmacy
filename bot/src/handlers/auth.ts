@@ -14,7 +14,7 @@ export async function startLogin(ctx: BotContext) {
   const user = await userStore.findByTelegramId(ctx.from!.id);
 
   if (!user) {
-    await ctx.reply(t(lang, "register_duplicate"));
+    await ctx.reply(t(lang, "register_first"));
     return;
   }
 

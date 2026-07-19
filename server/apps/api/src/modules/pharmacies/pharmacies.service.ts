@@ -270,16 +270,28 @@ export class PharmaciesService {
     });
   }
 
-  async updateCashbackRule(ruleId: string, dto: UpdateCashbackRuleDto) {
+  async updateCashbackRule(
+    ruleId: string,
+    dto: UpdateCashbackRuleDto,
+    userPharmacyId?: string,
+    userScope?: string,
+  ) {
     const rule = await this.prisma.client.cashbackRule.findUnique({ where: { id: ruleId } });
     if (!rule) throw new NotFoundException('Cashback rule not found');
 
-    const data: any = { ...dto };
+    // PHARMACY_ADMIN can only update rules belonging to their pharmacy
+    if (userScope !== 'SUPER_ADMIN' && rule.pharmacyId !== userPharmacyId) {
+      throw new NotFoundException('Cashback rule not found');
+    }
+
+    const data: any = {};
+    if (dto.type !== undefined) data.type = dto.type;
+    if (dto.value !== undefined) data.value = dto.value;
+    if (dto.minPurchase !== undefined) data.minPurchase = dto.minPurchase;
+    if (dto.maxCashback !== undefined) data.maxCashback = dto.maxCashback;
+    if (dto.isActive !== undefined) data.isActive = dto.isActive;
     if (dto.validFrom) data.validFrom = new Date(dto.validFrom);
     if (dto.validTo) data.validTo = new Date(dto.validTo);
-    if (dto.minPurchase === undefined && dto.minPurchase !== undefined) {
-      data.minPurchase = 0;
-    }
 
     const updated = await this.prisma.client.cashbackRule.update({
       where: { id: ruleId },
@@ -290,9 +302,18 @@ export class PharmaciesService {
     return updated;
   }
 
-  async deleteCashbackRule(ruleId: string) {
+  async deleteCashbackRule(
+    ruleId: string,
+    userPharmacyId?: string,
+    userScope?: string,
+  ) {
     const rule = await this.prisma.client.cashbackRule.findUnique({ where: { id: ruleId } });
     if (!rule) throw new NotFoundException('Cashback rule not found');
+
+    // PHARMACY_ADMIN can only delete rules belonging to their pharmacy
+    if (userScope !== 'SUPER_ADMIN' && rule.pharmacyId !== userPharmacyId) {
+      throw new NotFoundException('Cashback rule not found');
+    }
 
     await this.prisma.client.cashbackRule.update({
       where: { id: ruleId },

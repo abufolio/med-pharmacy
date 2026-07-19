@@ -2,6 +2,7 @@ import { InlineKeyboard, Keyboard } from "grammy";
 import { BotContext, LanguageCode } from "../types";
 import { t } from "../utils/i18n";
 import { userStore, PaginatedTransactions } from "../utils/store";
+import { withdrawAmountSchema } from "../utils/validation";
 
 // ── Main Menu ──────────────────────────────────────────
 export async function showMainMenu(ctx: BotContext, message?: string) {
@@ -26,8 +27,8 @@ export async function showMainMenu(ctx: BotContext, message?: string) {
   }
 
   const keyboard = new Keyboard()
-    .text(t(lang, "btn_profile")).text(t(lang, "btn_balance")).row()
-    .text(t(lang, "btn_history")).text(t(lang, "btn_withdraw")).row()
+    .text(t(lang, "btn_profile")).text(t(lang, "btn_card")).text(t(lang, "btn_balance")).row()
+    .text(t(lang, "btn_history")).text(t(lang, "btn_withdraw")).text(t(lang, "btn_notifications")).row()
     .text(t(lang, "btn_promo")).text(t(lang, "btn_referral")).row()
     .text(t(lang, "btn_settings")).text(t(lang, "btn_support"))
     .resized();
@@ -237,7 +238,8 @@ export async function handleWithdrawAmount(ctx: BotContext, text: string) {
   if (!user) return;
 
   const amount = parseInt(text.replace(/[^\d]/g, ""), 10);
-  if (isNaN(amount) || amount <= 0) {
+  const parsed = withdrawAmountSchema.safeParse(amount);
+  if (!parsed.success) {
     await ctx.reply(t(lang, "withdraw_amount_prompt", { balance: user.balance.toLocaleString() }));
     return;
   }
@@ -247,14 +249,23 @@ export async function handleWithdrawAmount(ctx: BotContext, text: string) {
     return;
   }
 
-  // Record the withdraw request (in-memory for now)
-  // In production, backend API POST /withdraw-requests
-  user.balance -= amount;
+  const result = await userStore.createWithdrawRequest(ctx.from!.id, amount);
 
   ctx.session.step = "main_menu";
 
+  if (!result.success) {
+    await ctx.reply(t(lang, "withdraw_insufficient"));
+    await showMainMenu(ctx);
+    return;
+  }
+
+  // Show request ID if available
+  const requestIdText = result.requestId
+    ? t(lang, "withdraw_request_id", { id: result.requestId.slice(0, 8) })
+    : "";
+
   await ctx.reply(
-    t(lang, "withdraw_success", { amount: amount.toLocaleString() }),
+    t(lang, "withdraw_success", { amount: amount.toLocaleString() }) + "\n" + requestIdText,
     { reply_markup: { remove_keyboard: true } }
   );
 
@@ -276,11 +287,37 @@ export async function showPromo(ctx: BotContext) {
 export async function handlePromoCode(ctx: BotContext, text: string) {
   const lang = ctx.session.lang;
 
-  // Will be connected to backend API later
-  // For now, simulate invalid
+  const result = await userStore.redeemPromoCode(ctx.from!.id, text);
+
   ctx.session.step = "main_menu";
 
-  await ctx.reply(t(lang, "promo_invalid"));
+  if (!result.success) {
+    const errorKey = result.error;
+    // Map error codes to i18n keys
+    const errorMap: Record<string, string> = {
+      PROMO_INVALID: "promo_invalid",
+      PROMO_INACTIVE: "promo_inactive",
+      PROMO_NOT_YET: "promo_not_yet",
+      PROMO_EXPIRED: "promo_expired",
+      PROMO_LIMIT: "promo_limit_reached",
+      PROMO_DUPLICATE: "promo_duplicate",
+    };
+    const i18nKey = errorMap[errorKey] || "promo_invalid";
+    await ctx.reply(t(lang, i18nKey));
+    await showMainMenu(ctx);
+    return;
+  }
+
+  const discountText =
+    result.type === "PERCENT"
+      ? `${result.discount}%`
+      : `${result.discount.toLocaleString()} so'm`;
+
+  await ctx.reply(
+    t(lang, "promo_success", { discount: discountText }),
+    { reply_markup: { remove_keyboard: true } }
+  );
+
   await showMainMenu(ctx);
 }
 
@@ -290,12 +327,17 @@ export async function showReferral(ctx: BotContext) {
   const user = await userStore.findByTelegramId(ctx.from!.id);
   if (!user) return;
 
+  const stats = await userStore.getReferralStats(ctx.from!.id);
+
   const keyboard = new Keyboard().text(t(lang, "back_btn")).resized();
 
   await ctx.reply(
     t(lang, "referral_title") + "\n\n" +
     t(lang, "referral_link", { userId: user.id }) + "\n\n" +
-    t(lang, "referral_stats", { count: 0, bonus: "0" }),
+    t(lang, "referral_stats", {
+      count: stats.count,
+      bonus: stats.bonusAmount.toLocaleString(),
+    }),
     { reply_markup: keyboard }
   );
 }
@@ -313,8 +355,35 @@ export async function showSettings(ctx: BotContext) {
 }
 
 export async function showLanguageSettings(ctx: BotContext) {
-  const { showLanguageSelection } = await import("./register");
-  await showLanguageSelection(ctx);
+  ctx.session.step = "settings_lang_select";
+
+  const keyboard = new Keyboard()
+    .text(t("uz", "uz")).row()
+    .text(t("uz", "ru")).row()
+    .text(t("uz", "en"))
+    .resized().oneTime();
+
+  await ctx.reply(t("uz", "lang_select"), { reply_markup: keyboard });
+}
+
+export async function handleSettingsLanguage(ctx: BotContext, text: string) {
+  const langMap: Record<string, LanguageCode> = {
+    "🇺🇿 O'zbekcha": "uz",
+    "🇷🇺 Русский": "ru",
+    "🇬🇧 English": "en",
+  };
+
+  const lang = langMap[text];
+  if (!lang) {
+    await ctx.reply(t("uz", "lang_select"));
+    return;
+  }
+
+  ctx.session.lang = lang;
+  ctx.session.step = "main_menu";
+
+  await ctx.reply(t(lang, "lang_selected"));
+  await showMainMenu(ctx);
 }
 
 // ── Support ────────────────────────────────────────────

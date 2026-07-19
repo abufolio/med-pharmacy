@@ -32,11 +32,10 @@ export class TransactionsController {
       dto.pharmacyId = user.pharmacyId!;
       dto.employeeId = dto.employeeId || user.id;
     }
-    const result = await this.transactions.create(dto);
-    return { success: true, ...result };
+    return this.transactions.create(dto);
   }
 
-  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
+  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get()
   async findAll(
     @CurrentUser() user: AuthenticatedUser,
@@ -44,21 +43,27 @@ export class TransactionsController {
     @Query('limit') limit = '50',
   ) {
     const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId;
-    const result = await this.transactions.findAll(pharmacyId, Number(page), Number(limit));
-    return { success: true, ...result };
+    return this.transactions.findAll(pharmacyId, Number(page), Number(limit));
   }
 
-  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
+  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get(':id')
-  async findById(@Param('id') id: string) {
-    const result = await this.transactions.findById(id);
-    return { success: true, data: result };
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId;
+    return this.transactions.findById(id, pharmacyId);
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Post(':id/reverse')
   @HttpCode(HttpStatus.OK)
-  async reverse(@Param('id') id: string) {
-    return this.transactions.reverseTransaction(id);
+  async reverse(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId;
+    return this.transactions.reverseTransaction(id, pharmacyId);
   }
 }

@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
   HttpCode,
@@ -14,6 +15,7 @@ import { RefreshDto } from './dto/refresh.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard, Roles } from './guards/roles.guard';
 import { Public } from './guards/public.decorator';
+import { CurrentUser, AuthenticatedUser } from './guards/current-user.decorator';
 import { Request } from 'express';
 
 @Controller('auth')
@@ -46,6 +48,12 @@ export class AuthController {
       await this.auth.logout(refreshToken);
     }
     return { message: 'Logged out successfully' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async me(@CurrentUser() user: AuthenticatedUser) {
+    return this.auth.me(user.id, user.role);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

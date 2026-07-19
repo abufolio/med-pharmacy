@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { CashbacksService } from './cashbacks.service';
 import { CreateCashbackRuleDto, UpdateCashbackRuleDto } from './dto/cashback-rule.dto';
+import { AccrueCashbackDto } from './dto/accrue-cashback.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { CurrentUser, AuthenticatedUser } from '../auth/guards/current-user.decorator';
@@ -69,6 +70,13 @@ export class CashbacksController {
   }
 
   // ── User Cashbacks ─────────────────────────
+
+  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
+  @Post('accrue')
+  @HttpCode(HttpStatus.CREATED)
+  async accrueCashback(@Body() dto: AccrueCashbackDto) {
+    return this.cashbacks.accrue(dto);
+  }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Get('user/:userId')

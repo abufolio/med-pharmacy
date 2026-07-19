@@ -49,35 +49,25 @@ export class TransactionsService {
     if (pharmacy.status !== 'ACTIVE') throw new BadRequestException('Pharmacy is not active');
     if (user.status === 'BLOCKED') throw new BadRequestException('User is blocked');
 
-    // ── Find best active cashback rule ──
-    const rule = await this.prisma.client.cashbackRule.findFirst({
-      where: {
-        pharmacyId,
-        isActive: true,
-        deletedAt: null,
-        AND: [
-          {
-            OR: [
-              { validFrom: null },
-              { validFrom: { lte: new Date() } },
-            ],
-          },
-          {
-            OR: [
-              { validTo: null },
-              { validTo: { gte: new Date() } },
-            ],
-          },
-        ],
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const cashbackAmount = rule ? this.calculateCashback(amount, rule) : 0;
-
     // ── Atomic Transaction ──
     const result = await this.prisma.client.$transaction(async (tx: any) => {
-      // 1. Create transaction
+      // 1. Re-read active rule inside transaction (prevents race condition)
+      const rule = await tx.cashbackRule.findFirst({
+        where: {
+          pharmacyId,
+          isActive: true,
+          deletedAt: null,
+          AND: [
+            { validFrom: null }, { validFrom: { lte: new Date() } },
+          ].filter(Boolean) as any,
+          validTo: { gte: new Date() },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const cashbackAmount = rule ? this.calculateCashback(amount, rule) : 0;
+
+      // 2. Create transaction
       const transaction = await tx.transaction.create({
         data: {
           userId,
@@ -144,21 +134,26 @@ export class TransactionsService {
     });
 
     // ── Audit (async — never blocks response) ──
+    const auditCashback = result.cashback;
     this.audit.log(
       'TRANSACTION_CREATED',
       'transaction',
       result.transaction.id,
       undefined,
-      { userId, pharmacyId, amount, cashbackAmount, cashbackRule: rule?.type },
+      {
+        userId, pharmacyId, amount,
+        cashbackAmount: auditCashback?.amount ?? 0,
+        cashbackRule: auditCashback?.ruleType ?? 'NONE',
+      },
     );
 
-    if (cashbackAmount > 0) {
+    if (auditCashback && auditCashback.amount > 0) {
       this.audit.log(
         'CASHBACK_ACCRUED',
         'cashback',
-        result.cashback?.id,
+        auditCashback.id,
         undefined,
-        { userId, pharmacyId, amount: cashbackAmount, transactionId: result.transaction.id },
+        { transactionId: result.transaction.id, amount: auditCashback.amount },
       );
     }
 
@@ -168,6 +163,10 @@ export class TransactionsService {
   // ──────────────────────────────────────────────
   // Cashback Calculation
   // ──────────────────────────────────────────────
+
+  private round2(n: number): number {
+    return Math.round(n * 100) / 100;
+  }
 
   private calculateCashback(
     amount: number,
@@ -181,12 +180,13 @@ export class TransactionsService {
     switch (rule.type) {
       case 'PERCENT': {
         const cashback = amount * (value / 100);
-        return maxCashback ? Math.min(cashback, maxCashback) : Math.round(cashback * 100) / 100;
+        const capped = maxCashback ? Math.min(cashback, maxCashback) : cashback;
+        return this.round2(capped);
       }
       case 'FIXED':
-        return value;
+        return this.round2(value);
       case 'CAMPAIGN':
-        return maxCashback || value;
+        return this.round2(maxCashback || value);
       default:
         return 0;
     }
@@ -216,9 +216,12 @@ export class TransactionsService {
     return { data, total, page, limit };
   }
 
-  async findById(id: string) {
-    const transaction = await this.prisma.client.transaction.findUnique({
-      where: { id },
+  async findById(id: string, pharmacyId?: string) {
+    const where: any = { id };
+    if (pharmacyId) where.pharmacyId = pharmacyId;
+
+    const transaction = await this.prisma.client.transaction.findFirst({
+      where,
       include: {
         user: { select: { id: true, firstName: true, lastName: true, phone: true } },
         pharmacy: { select: { id: true, name: true } },
@@ -229,9 +232,12 @@ export class TransactionsService {
     return transaction;
   }
 
-  async reverseTransaction(id: string) {
-    const transaction = await this.prisma.client.transaction.findUnique({
-      where: { id },
+  async reverseTransaction(id: string, pharmacyId?: string) {
+    const where: any = { id };
+    if (pharmacyId) where.pharmacyId = pharmacyId;
+
+    const transaction = await this.prisma.client.transaction.findFirst({
+      where,
       include: { cashbacks: true },
     });
     if (!transaction) throw new NotFoundException('Transaction not found');

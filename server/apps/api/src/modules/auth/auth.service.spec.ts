@@ -1,11 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { PrismaService } from '@server/database';
 import { AuditHelper } from '../audit/audit.helper';
-import { EventBus } from '@server/events';
+import * as bcrypt from 'bcryptjs';
+
+// Mock bcryptjs at module level
+jest.mock('bcryptjs', () => ({
+  hash: jest.fn().mockResolvedValue('hashed-password'),
+  compare: jest.fn().mockResolvedValue(true),
+}));
 
 // ── Mock helpers ──
 const mockDate = new Date('2026-07-12T12:00:00Z');
@@ -17,6 +22,14 @@ const mockPharmacy = {
   passwordHash: '$2a$12$hashed',
   status: 'ACTIVE',
   name: 'Test Pharmacy',
+};
+
+const mockSuperAdmin = {
+  id: 'sa-1',
+  login: 'admin',
+  passwordHash: '$2a$12$hashed',
+  status: 'ACTIVE',
+  fullName: 'Super Admin',
 };
 
 const mockEmployee = {
@@ -67,8 +80,12 @@ describe('AuthService', () => {
         pharmacy: {
           findUnique: jest.fn(),
         },
+        superAdmin: {
+          findUnique: jest.fn(),
+        },
         employee: {
           findUnique: jest.fn(),
+          create: jest.fn(),
         },
         session: {
           findUnique: jest.fn(),
@@ -116,7 +133,7 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should login pharmacy successfully', async () => {
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       jest.spyOn(service as any, 'generateTokens').mockResolvedValue(mockTokens);
 
       prisma.client.pharmacy.findUnique.mockResolvedValue(mockPharmacy);
@@ -130,7 +147,7 @@ describe('AuthService', () => {
     });
 
     it('should login employee successfully', async () => {
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       jest.spyOn(service as any, 'generateTokens').mockResolvedValue(mockTokens);
 
       prisma.client.pharmacy.findUnique.mockResolvedValue(null);
@@ -175,7 +192,7 @@ describe('AuthService', () => {
     });
 
     it('should throw on wrong password', async () => {
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       prisma.client.pharmacy.findUnique.mockResolvedValue(mockPharmacy);
 
@@ -286,7 +303,7 @@ describe('AuthService', () => {
     const pharmacyId = 'ph-1';
 
     it('should register employee successfully', async () => {
-      jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-password' as never);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
       jest.spyOn(service as any, 'generateTokens').mockResolvedValue(mockTokens);
 
       prisma.client.employee.findUnique.mockResolvedValue(null);
