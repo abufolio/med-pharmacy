@@ -27,22 +27,23 @@ let CardsController = class CardsController {
         this.cards = cards;
     }
     async create(dto) {
-        return this.cards.create(dto);
+        return { success: true, data: await this.cards.create(dto) };
     }
     async findAll(page = '1', limit = '50') {
-        return this.cards.findAll(Number(page), Number(limit));
+        const result = await this.cards.findAll(Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async findByUid(uid) {
-        return this.cards.findByUid(uid);
+        return { success: true, data: await this.cards.findByUid(uid) };
     }
     async updateStatus(uid, status) {
-        return this.cards.updateStatus(uid, status);
+        return { success: true, data: await this.cards.updateStatus(uid, status) };
     }
     async assignCard(dto) {
-        return this.cards.assignCard(dto);
+        return { success: true, data: await this.cards.assignCard(dto) };
     }
     async unassignCard(dto) {
-        return this.cards.unassignCard(dto);
+        return { success: true, data: await this.cards.unassignCard(dto) };
     }
     async scan(dto) {
         return this.cards.scan(dto);

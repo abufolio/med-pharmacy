@@ -7,79 +7,22 @@ import {
   CreatePharmacyDto, UpdatePharmacyDto,
   UpdatePharmacyStatusDto, ChangePharmacyPasswordDto,
 } from './dto/create-pharmacy.dto';
-import {
-  CreateRegionDto, CreateDistrictDto,
-  UpdateRegionDto, UpdateDistrictDto,
-} from './dto/region.dto';
 import { CreateCashbackRuleDto, UpdateCashbackRuleDto } from './dto/cashback-rule.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { CurrentUser, AuthenticatedUser } from '../auth/guards/current-user.decorator';
-import { Public } from '../auth/guards/public.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller()
 export class PharmaciesController {
   constructor(private readonly pharmacies: PharmaciesService) {}
 
-  // ── Regions ──
-  @Roles('SUPER_ADMIN')
-  @Post('regions')
-  @HttpCode(HttpStatus.CREATED)
-  async createRegion(@Body() dto: CreateRegionDto) {
-    return this.pharmacies.createRegion(dto);
-  }
-
-  @Public()
-  @Get('regions')
-  async getRegions() {
-    return this.pharmacies.getRegions();
-  }
-
-  @Roles('SUPER_ADMIN')
-  @Patch('regions/:id')
-  async updateRegion(@Param('id') id: string, @Body() dto: UpdateRegionDto) {
-    return this.pharmacies.updateRegion(id, dto);
-  }
-
-  @Roles('SUPER_ADMIN')
-  @Delete('regions/:id')
-  async deleteRegion(@Param('id') id: string) {
-    return this.pharmacies.deleteRegion(id);
-  }
-
-  // ── Districts ──
-  @Roles('SUPER_ADMIN')
-  @Post('districts')
-  @HttpCode(HttpStatus.CREATED)
-  async createDistrict(@Body() dto: CreateDistrictDto) {
-    return this.pharmacies.createDistrict(dto);
-  }
-
-  @Public()
-  @Get('districts')
-  async getDistricts(@Query('regionId') regionId?: string) {
-    return this.pharmacies.getDistricts(regionId);
-  }
-
-  @Roles('SUPER_ADMIN')
-  @Patch('districts/:id')
-  async updateDistrict(@Param('id') id: string, @Body() dto: UpdateDistrictDto) {
-    return this.pharmacies.updateDistrict(id, dto);
-  }
-
-  @Roles('SUPER_ADMIN')
-  @Delete('districts/:id')
-  async deleteDistrict(@Param('id') id: string) {
-    return this.pharmacies.deleteDistrict(id);
-  }
-
   // ── Pharmacies ──
   @Roles('SUPER_ADMIN')
   @Post('pharmacies')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() dto: CreatePharmacyDto) {
-    return this.pharmacies.create(dto);
+    return { success: true, data: await this.pharmacies.create(dto) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
@@ -92,21 +35,23 @@ export class PharmaciesController {
   ) {
     // Pharmacy admin can only see their own pharmacy
     if (user.scope === 'PHARMACY') {
-      return this.pharmacies.findById(user.pharmacyId!);
+      const result = await this.pharmacies.findById(user.pharmacyId!);
+      return { success: true, data: result };
     }
-    return this.pharmacies.findAll(status, Number(page), Number(limit));
+    const result = await this.pharmacies.findAll(status, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get('pharmacies/:id')
   async findById(@Param('id') id: string) {
-    return this.pharmacies.findById(id);
+    return { success: true, data: await this.pharmacies.findById(id) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Patch('pharmacies/:id')
   async update(@Param('id') id: string, @Body() dto: UpdatePharmacyDto) {
-    return this.pharmacies.update(id, dto);
+    return { success: true, data: await this.pharmacies.update(id, dto) };
   }
 
   @Roles('SUPER_ADMIN')
@@ -115,7 +60,7 @@ export class PharmaciesController {
     @Param('id') id: string,
     @Body() dto: UpdatePharmacyStatusDto,
   ) {
-    return this.pharmacies.updateStatus(id, dto);
+    return { success: true, data: await this.pharmacies.updateStatus(id, dto) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
@@ -125,7 +70,7 @@ export class PharmaciesController {
     @Param('id') id: string,
     @Body() dto: ChangePharmacyPasswordDto,
   ) {
-    return this.pharmacies.changePassword(id, dto);
+    return { success: true, data: await this.pharmacies.changePassword(id, dto) };
   }
 
   // ── Cashback Rules ──
@@ -136,13 +81,13 @@ export class PharmaciesController {
     @Param('id') pharmacyId: string,
     @Body() dto: CreateCashbackRuleDto,
   ) {
-    return this.pharmacies.createCashbackRule(pharmacyId, dto);
+    return { success: true, data: await this.pharmacies.createCashbackRule(pharmacyId, dto) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get('pharmacies/:id/cashback-rules')
   async getCashbackRules(@Param('id') pharmacyId: string) {
-    return this.pharmacies.getCashbackRules(pharmacyId);
+    return { success: true, data: await this.pharmacies.getCashbackRules(pharmacyId) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
@@ -151,12 +96,12 @@ export class PharmaciesController {
     @Param('ruleId') ruleId: string,
     @Body() dto: UpdateCashbackRuleDto,
   ) {
-    return this.pharmacies.updateCashbackRule(ruleId, dto);
+    return { success: true, data: await this.pharmacies.updateCashbackRule(ruleId, dto) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Delete('cashback-rules/:ruleId')
   async deleteCashbackRule(@Param('ruleId') ruleId: string) {
-    return this.pharmacies.deleteCashbackRule(ruleId);
+    return { success: true, data: await this.pharmacies.deleteCashbackRule(ruleId) };
   }
 }

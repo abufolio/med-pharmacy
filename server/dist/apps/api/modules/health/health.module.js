@@ -8,19 +8,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthModule = void 0;
 const common_1 = require("@nestjs/common");
-const terminus_1 = require("@nestjs/terminus");
 const health_controller_1 = require("./health.controller");
 let HealthModule = class HealthModule {
 };
 exports.HealthModule = HealthModule;
 exports.HealthModule = HealthModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            terminus_1.TerminusModule.forRoot({
-                errorLogStyle: 'pretty',
-                gracefulShutdownTimeoutMs: 1000,
-            }),
-        ],
         controllers: [health_controller_1.HealthController],
     })
 ], HealthModule);

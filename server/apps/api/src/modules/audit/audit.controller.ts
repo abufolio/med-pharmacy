@@ -25,6 +25,6 @@ export class AuditController {
       this.prisma.client.auditLog.count(),
     ]);
 
-    return { data, total, page: Number(page), limit: Number(limit) };
+    return { success: true, data, total, page: Number(page), limit: Number(limit) };
   }
 }

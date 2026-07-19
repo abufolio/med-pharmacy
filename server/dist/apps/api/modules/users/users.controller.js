@@ -24,30 +24,35 @@ let UsersController = class UsersController {
         this.users = users;
     }
     async create(dto) {
-        return this.users.create(dto);
+        const result = await this.users.create(dto);
+        return { success: true, data: result };
     }
     async findAll(search, page = '1', limit = '50') {
-        return this.users.findAll(search, Number(page), Number(limit));
+        const result = await this.users.findAll(search, Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async findByPhone(phone) {
-        return this.users.findByPhone(phone);
+        const result = await this.users.findByPhone(phone);
+        return { success: true, data: result };
     }
     async findById(id) {
-        return this.users.findById(id);
+        const result = await this.users.findById(id);
+        return { success: true, data: result };
     }
     async update(id, dto) {
-        return this.users.update(id, dto);
+        const result = await this.users.update(id, dto);
+        return { success: true, data: result };
     }
     async block(id) {
-        return this.users.block(id);
+        return { success: true, data: await this.users.block(id) };
     }
     async unblock(id) {
-        return this.users.unblock(id);
+        return { success: true, data: await this.users.unblock(id) };
     }
 };
 exports.UsersController = UsersController;
 __decorate([
-    (0, roles_guard_1.Roles)('SUPER_ADMIN', 'PHARMACY_ADMIN'),
+    (0, roles_guard_1.Roles)('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE'),
     (0, common_1.Post)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, common_1.Body)()),
@@ -56,7 +61,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "create", null);
 __decorate([
-    (0, roles_guard_1.Roles)('SUPER_ADMIN', 'PHARMACY_ADMIN'),
+    (0, roles_guard_1.Roles)('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE'),
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)('search')),
     __param(1, (0, common_1.Query)('page')),

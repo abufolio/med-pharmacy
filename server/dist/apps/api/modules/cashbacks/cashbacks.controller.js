@@ -28,23 +28,25 @@ let CashbacksController = class CashbacksController {
         const pharmacyId = user.role === 'SUPER_ADMIN'
             ? dto.pharmacyId
             : user.pharmacyId;
-        return this.cashbacks.createRule(dto, pharmacyId);
+        return { success: true, data: await this.cashbacks.createRule(dto, pharmacyId) };
     }
     async findAllRules(user, page = '1', limit = '50') {
         const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId;
-        return this.cashbacks.findAllRules(pharmacyId, Number(page), Number(limit));
+        const result = await this.cashbacks.findAllRules(pharmacyId, Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async findRuleById(id) {
-        return this.cashbacks.findRuleById(id);
+        return { success: true, data: await this.cashbacks.findRuleById(id) };
     }
     async updateRule(id, dto) {
-        return this.cashbacks.updateRule(id, dto);
+        return { success: true, data: await this.cashbacks.updateRule(id, dto) };
     }
     async removeRule(id) {
-        return this.cashbacks.removeRule(id);
+        return { success: true, data: await this.cashbacks.removeRule(id) };
     }
     async findUserCashbacks(userId, page = '1', limit = '50') {
-        return this.cashbacks.findUserCashbacks(userId, Number(page), Number(limit));
+        const result = await this.cashbacks.findUserCashbacks(userId, Number(page), Number(limit));
+        return { success: true, ...result };
     }
 };
 exports.CashbacksController = CashbacksController;

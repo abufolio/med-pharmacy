@@ -5,32 +5,43 @@ export declare class WalletsController {
     private readonly wallets;
     constructor(wallets: WalletsService);
     getBalance(userId: string): Promise<{
-        balance: number;
-        userId: string;
-        id?: undefined;
-        createdAt?: undefined;
-        updatedAt?: undefined;
-    } | {
-        id: any;
-        userId: any;
-        balance: any;
-        createdAt: any;
-        updatedAt: any;
+        success: boolean;
+        data: {
+            balance: number;
+            userId: string;
+            id?: undefined;
+            createdAt?: undefined;
+            updatedAt?: undefined;
+        } | {
+            id: any;
+            userId: any;
+            balance: any;
+            createdAt: any;
+            updatedAt: any;
+        };
     }>;
     getTransactions(userId: string, page?: string, limit?: string): Promise<{
         data: any;
         total: any;
         page: number;
         limit: number;
+        success: boolean;
     }>;
-    requestWithdraw(userId: string, dto: RequestWithdrawDto): Promise<any>;
+    requestWithdraw(userId: string, dto: RequestWithdrawDto): Promise<{
+        success: boolean;
+        data: any;
+    }>;
     getWithdrawRequests(page?: string, limit?: string): Promise<{
         data: any;
         total: any;
         page: number;
         limit: number;
+        success: boolean;
     }>;
     reviewWithdraw(id: string, user: AuthenticatedUser, dto: ReviewWithdrawDto): Promise<{
-        message: string;
+        success: boolean;
+        data: {
+            message: string;
+        };
     }>;
 }

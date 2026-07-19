@@ -27,10 +27,12 @@ let AuthController = class AuthController {
         this.auth = auth;
     }
     async login(dto) {
-        return this.auth.login(dto);
+        const result = await this.auth.login(dto);
+        return { success: true, ...result };
     }
     async refresh(dto) {
-        return this.auth.refresh(dto);
+        const result = await this.auth.refresh(dto);
+        return { success: true, ...result };
     }
     async logout(req) {
         const refreshToken = req.body?.refreshToken;
@@ -43,7 +45,8 @@ let AuthController = class AuthController {
         const pharmacyId = req.user.role === 'SUPER_ADMIN'
             ? dto.pharmacyId
             : req.user.pharmacyId;
-        return this.auth.registerEmployee(dto, pharmacyId);
+        const result = await this.auth.registerEmployee(dto, pharmacyId);
+        return { success: true, data: result };
     }
 };
 exports.AuthController = AuthController;

@@ -26,23 +26,23 @@ let FilesController = class FilesController {
     async upload(file, folder) {
         if (!file)
             throw new common_1.BadRequestException('File is required');
-        return this.files.upload(file, folder || 'general');
+        return { success: true, data: await this.files.upload(file, folder || 'general') };
     }
     async uploadMultiple(files, folder) {
         if (!files || files.length === 0) {
             throw new common_1.BadRequestException('At least one file is required');
         }
-        return this.files.uploadMultiple(files, folder || 'general');
+        return { success: true, data: await this.files.uploadMultiple(files, folder || 'general') };
     }
     async getFileInfo(filepath) {
         if (!filepath)
             throw new common_1.BadRequestException('File path is required');
-        return this.files.getFileInfo(filepath);
+        return { success: true, data: await this.files.getFileInfo(filepath) };
     }
     async delete(filepath) {
         if (!filepath)
             throw new common_1.BadRequestException('File path is required');
-        return this.files.delete(filepath);
+        return { success: true, data: await this.files.delete(filepath) };
     }
 };
 exports.FilesController = FilesController;

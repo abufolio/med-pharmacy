@@ -29,14 +29,17 @@ let TransactionsController = class TransactionsController {
             dto.pharmacyId = user.pharmacyId;
             dto.employeeId = dto.employeeId || user.id;
         }
-        return this.transactions.create(dto);
+        const result = await this.transactions.create(dto);
+        return { success: true, ...result };
     }
     async findAll(user, page = '1', limit = '50') {
         const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId;
-        return this.transactions.findAll(pharmacyId, Number(page), Number(limit));
+        const result = await this.transactions.findAll(pharmacyId, Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async findById(id) {
-        return this.transactions.findById(id);
+        const result = await this.transactions.findById(id);
+        return { success: true, data: result };
     }
     async reverse(id) {
         return this.transactions.reverseTransaction(id);
@@ -54,7 +57,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "create", null);
 __decorate([
-    (0, roles_guard_1.Roles)('SUPER_ADMIN', 'PHARMACY_ADMIN'),
+    (0, roles_guard_1.Roles)('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE'),
     (0, common_1.Get)(),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)('page')),
@@ -64,7 +67,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "findAll", null);
 __decorate([
-    (0, roles_guard_1.Roles)('SUPER_ADMIN', 'PHARMACY_ADMIN'),
+    (0, roles_guard_1.Roles)('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE'),
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

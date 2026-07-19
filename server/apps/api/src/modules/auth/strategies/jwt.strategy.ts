@@ -15,30 +15,44 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtPayload) {
-    // Determine entity type from payload
-    let entity: { id: string; login: string; status: string } | null = null;
-
     if (payload.scope === 'PHARMACY') {
-      const employee = await this.prisma.client.employee.findUnique({
-        where: { id: payload.sub },
-        select: { id: true, login: true, status: true, pharmacyId: true },
-      });
-      if (!employee || employee.status !== 'ACTIVE') {
-        throw new UnauthorizedException('Employee not found or inactive');
+      if (payload.entityType === 'pharmacy') {
+        // Pharmacy admin login
+        const pharmacy = await this.prisma.client.pharmacy.findUnique({
+          where: { id: payload.sub },
+          select: { id: true, login: true, status: true },
+        });
+        if (!pharmacy || pharmacy.status !== 'ACTIVE') {
+          throw new UnauthorizedException('Pharmacy not found or inactive');
+        }
+        return {
+          id: pharmacy.id,
+          login: pharmacy.login,
+          role: payload.role,
+          scope: payload.scope,
+          pharmacyId: payload.pharmacyId,
+        };
       }
-      entity = employee;
+
+      if (payload.entityType === 'employee') {
+        // Employee login
+        const employee = await this.prisma.client.employee.findUnique({
+          where: { id: payload.sub },
+          select: { id: true, login: true, status: true },
+        });
+        if (!employee || employee.status !== 'ACTIVE') {
+          throw new UnauthorizedException('Employee not found or inactive');
+        }
+        return {
+          id: employee.id,
+          login: employee.login,
+          role: payload.role,
+          scope: payload.scope,
+          pharmacyId: payload.pharmacyId,
+        };
+      }
     }
 
-    if (!entity) {
-      throw new UnauthorizedException('Invalid token payload');
-    }
-
-    return {
-      id: entity.id,
-      login: entity.login,
-      role: payload.role,
-      scope: payload.scope,
-      pharmacyId: payload.pharmacyId,
-    };
+    throw new UnauthorizedException('Invalid token payload');
   }
 }

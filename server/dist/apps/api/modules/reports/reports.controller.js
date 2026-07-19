@@ -29,28 +29,30 @@ let ReportsController = class ReportsController {
             ? query.pharmacyId
             : user.pharmacyId;
         if (!pharmacyId)
-            return { data: [], total: 0, page: 1, limit: 31 };
-        return this.reports.getDailyStats(pharmacyId, query.from, query.to, Number(query.page || '1'), Number(query.limit || '31'));
+            return { success: true, data: [], total: 0, page: 1, limit: 31 };
+        const result = await this.reports.getDailyStats(pharmacyId, query.from, query.to, Number(query.page || '1'), Number(query.limit || '31'));
+        return { success: true, ...result };
     }
     async getPharmacySummary(user, query) {
         const pharmacyId = user.role === 'SUPER_ADMIN'
             ? query.pharmacyId
             : user.pharmacyId;
         if (!pharmacyId)
-            return { message: 'Pharmacy ID is required' };
-        return this.reports.getPharmacySummary(pharmacyId, query.from, query.to);
+            return { success: true, message: 'Pharmacy ID is required' };
+        return { success: true, data: await this.reports.getPharmacySummary(pharmacyId, query.from, query.to) };
     }
     async getAdminOverview(query) {
-        return this.reports.getAdminOverview(query.from, query.to);
+        return { success: true, data: await this.reports.getAdminOverview(query.from, query.to) };
     }
     async getTopPharmacies(limit = '10', from, to) {
-        return this.reports.getTopPharmacies(Number(limit), from, to);
+        return { success: true, data: await this.reports.getTopPharmacies(Number(limit), from, to) };
     }
     async getTransactionReport(user, query) {
         const pharmacyId = user.role === 'SUPER_ADMIN'
             ? query.pharmacyId
             : user.pharmacyId;
-        return this.reports.getTransactionReport(pharmacyId, query.from, query.to, Number(query.page || '1'), Number(query.limit || '100'));
+        const result = await this.reports.getTransactionReport(pharmacyId, query.from, query.to, Number(query.page || '1'), Number(query.limit || '100'));
+        return { success: true, ...result };
     }
 };
 exports.ReportsController = ReportsController;

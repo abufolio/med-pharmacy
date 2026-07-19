@@ -25,7 +25,7 @@ export class WalletsController {
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Get(':userId')
   async getBalance(@Param('userId') userId: string) {
-    return this.wallets.getBalance(userId);
+    return { success: true, data: await this.wallets.getBalance(userId) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
@@ -35,7 +35,8 @@ export class WalletsController {
     @Query('page') page = '1',
     @Query('limit') limit = '50',
   ) {
-    return this.wallets.getTransactionHistory(userId, Number(page), Number(limit));
+    const result = await this.wallets.getTransactionHistory(userId, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   // ── Withdraw Requests ──
@@ -47,7 +48,7 @@ export class WalletsController {
     @Param('userId') userId: string,
     @Body() dto: RequestWithdrawDto,
   ) {
-    return this.wallets.requestWithdraw(userId, dto);
+    return { success: true, data: await this.wallets.requestWithdraw(userId, dto) };
   }
 
   @Roles('SUPER_ADMIN')
@@ -56,7 +57,8 @@ export class WalletsController {
     @Query('page') page = '1',
     @Query('limit') limit = '50',
   ) {
-    return this.wallets.getWithdrawRequests(undefined, Number(page), Number(limit));
+    const result = await this.wallets.getWithdrawRequests(undefined, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @Roles('SUPER_ADMIN')
@@ -67,6 +69,6 @@ export class WalletsController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ReviewWithdrawDto,
   ) {
-    return this.wallets.reviewWithdraw(id, user.id, dto);
+    return { success: true, data: await this.wallets.reviewWithdraw(id, user.id, dto) };
   }
 }

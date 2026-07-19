@@ -25,7 +25,7 @@ export class SettingsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() dto: CreateSettingDto) {
-    return this.settings.create(dto);
+    return { success: true, data: await this.settings.create(dto) };
   }
 
   @Roles('SUPER_ADMIN')
@@ -35,25 +35,26 @@ export class SettingsController {
     @Query('page') page = '1',
     @Query('limit') limit = '50',
   ) {
-    return this.settings.findAll(scope, Number(page), Number(limit));
+    const result = await this.settings.findAll(scope, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @Roles('SUPER_ADMIN')
   @Get(':key')
   async findByKey(@Param('key') key: string) {
-    return this.settings.findByKey(key);
+    return { success: true, data: await this.settings.findByKey(key) };
   }
 
   @Roles('SUPER_ADMIN')
   @Patch(':key')
   async update(@Param('key') key: string, @Body() dto: UpdateSettingDto) {
-    return this.settings.update(key, dto);
+    return { success: true, data: await this.settings.update(key, dto) };
   }
 
   @Roles('SUPER_ADMIN')
   @Delete(':key')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('key') key: string) {
-    return this.settings.remove(key);
+    return { success: true, data: await this.settings.remove(key) };
   }
 }

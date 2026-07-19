@@ -1,0 +1,48 @@
+# ─── Dependencies ───
+node_modules/
+
+# ─── Build ───
+dist/
+build/
+*.tsbuildinfo
+
+# ─── Environment ───
+.env
+.env.*
+!.env.example
+*.local
+
+# ─── Logs ───
+logs/
+*.log
+
+# ─── Editor & IDE ───
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.sw?
+*.suo
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+*~
+
+# ─── Testing ───
+coverage/
+.nyc_output/
+
+# ─── Misc ───
+*.pem
+.cache/
+.DS_Store
+
+# ─── IDE specific ───
+.idea/
+*.iml
+*.iws
+
+# ─── Project specific ───
+client/dist/
+server/dist/
+bot/dist/

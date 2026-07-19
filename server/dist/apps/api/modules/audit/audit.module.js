@@ -11,7 +11,6 @@ const common_1 = require("@nestjs/common");
 const database_1 = require("@server/database");
 const events_1 = require("@server/events");
 const audit_service_1 = require("./audit.service");
-const audit_listener_1 = require("./audit.listener");
 const audit_helper_1 = require("./audit.helper");
 const audit_controller_1 = require("./audit.controller");
 let AuditModule = class AuditModule {
@@ -22,7 +21,7 @@ exports.AuditModule = AuditModule = __decorate([
     (0, common_1.Module)({
         imports: [database_1.DatabaseModule, events_1.EventBusModule],
         controllers: [audit_controller_1.AuditController],
-        providers: [audit_service_1.AuditService, audit_listener_1.AuditListener, audit_helper_1.AuditHelper],
+        providers: [audit_service_1.AuditService, audit_helper_1.AuditHelper],
         exports: [audit_service_1.AuditService, audit_helper_1.AuditHelper],
     })
 ], AuditModule);

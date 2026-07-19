@@ -1,0 +1,52 @@
+# ─── Dependencies ───
+node_modules/
+.pnp
+.pnp.js
+
+# ─── Build ───
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
+# ─── Environment ───
+.env
+.env.*
+!.env.example
+*.local
+
+# ─── Logs ───
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── Editor & IDE ───
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.code-workspace
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ─── Testing ───
+coverage/
+.nyc_output/
+
+# ─── Misc ───
+*.pem
+.cache/
+

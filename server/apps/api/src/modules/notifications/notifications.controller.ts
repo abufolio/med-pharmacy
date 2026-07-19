@@ -12,20 +12,21 @@ export class NotificationsController {
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get()
   async findAll(@CurrentUser() user: AuthenticatedUser, @Query('page') page = '1', @Query('limit') limit = '50') {
-    return this.notifications.findByUser(user.id, Number(page), Number(limit));
+    const result = await this.notifications.findByUser(user.id, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Post(':id/read')
   @HttpCode(HttpStatus.OK)
   async markRead(@Param('id') id: string) {
-    return this.notifications.markRead(id);
+    return { success: true, data: await this.notifications.markRead(id) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Post('read-all')
   @HttpCode(HttpStatus.OK)
   async markAllRead(@CurrentUser() user: AuthenticatedUser) {
-    return this.notifications.markAllRead(user.id);
+    return { success: true, data: await this.notifications.markAllRead(user.id) };
   }
 }

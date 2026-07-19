@@ -15,38 +15,39 @@ export class EmployeesController {
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() dto: CreateEmployeeDto, @CurrentUser() user: AuthenticatedUser) {
     const pharmacyId = user.role === 'SUPER_ADMIN' ? dto.pharmacyId! : user.pharmacyId!;
-    return this.employees.create(dto, pharmacyId);
+    return { success: true, data: await this.employees.create(dto, pharmacyId) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get()
   async findAll(@CurrentUser() user: AuthenticatedUser, @Query('page') page = '1', @Query('limit') limit = '50') {
-    return this.employees.findAll(user.pharmacyId!, Number(page), Number(limit));
+    const result = await this.employees.findAll(user.pharmacyId!, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get(':id')
   async findById(@Param('id') id: string) {
-    return this.employees.findById(id);
+    return { success: true, data: await this.employees.findById(id) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: UpdateEmployeeDto) {
-    return this.employees.update(id, dto);
+    return { success: true, data: await this.employees.update(id, dto) };
   }
 
   @Roles('SUPER_ADMIN')
   @Post(':id/suspend')
   @HttpCode(HttpStatus.OK)
   async suspend(@Param('id') id: string) {
-    return this.employees.toggleStatus(id, 'SUSPENDED');
+    return { success: true, data: await this.employees.toggleStatus(id, 'SUSPENDED') };
   }
 
   @Roles('SUPER_ADMIN')
   @Post(':id/activate')
   @HttpCode(HttpStatus.OK)
   async activate(@Param('id') id: string) {
-    return this.employees.toggleStatus(id, 'ACTIVE');
+    return { success: true, data: await this.employees.toggleStatus(id, 'ACTIVE') };
   }
 }

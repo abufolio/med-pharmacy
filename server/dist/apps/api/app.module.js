@@ -31,6 +31,8 @@ const settings_module_1 = require("./modules/settings/settings.module");
 const referrals_module_1 = require("./modules/referrals/referrals.module");
 const promocodes_module_1 = require("./modules/promocodes/promocodes.module");
 const files_module_1 = require("./modules/files/files.module");
+const regions_module_1 = require("./modules/regions/regions.module");
+const districts_module_1 = require("./modules/districts/districts.module");
 const reports_module_1 = require("./modules/reports/reports.module");
 const jwt_auth_guard_1 = require("./modules/auth/guards/jwt-auth.guard");
 const tenant_interceptor_1 = require("./modules/auth/guards/tenant.interceptor");
@@ -74,6 +76,8 @@ exports.AppModule = AppModule = __decorate([
             referrals_module_1.ReferralsModule,
             promocodes_module_1.PromocodesModule,
             files_module_1.FilesModule,
+            regions_module_1.RegionsModule,
+            districts_module_1.DistrictsModule,
             reports_module_1.ReportsModule,
         ],
         providers: [

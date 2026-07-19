@@ -20,52 +20,57 @@ import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 export class UsersController {
   constructor(private readonly users: UsersService) {}
 
-  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
+  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() dto: CreateUserDto) {
-    return this.users.create(dto);
+    const result = await this.users.create(dto);
+    return { success: true, data: result };
   }
 
-  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
+  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Get()
   async findAll(
     @Query('search') search?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '50',
   ) {
-    return this.users.findAll(search, Number(page), Number(limit));
+    const result = await this.users.findAll(search, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Get('phone/:phone')
   async findByPhone(@Param('phone') phone: string) {
-    return this.users.findByPhone(phone);
+    const result = await this.users.findByPhone(phone);
+    return { success: true, data: result };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Get(':id')
   async findById(@Param('id') id: string) {
-    return this.users.findById(id);
+    const result = await this.users.findById(id);
+    return { success: true, data: result };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.users.update(id, dto);
+    const result = await this.users.update(id, dto);
+    return { success: true, data: result };
   }
 
   @Roles('SUPER_ADMIN')
   @Post(':id/block')
   @HttpCode(HttpStatus.OK)
   async block(@Param('id') id: string) {
-    return this.users.block(id);
+    return { success: true, data: await this.users.block(id) };
   }
 
   @Roles('SUPER_ADMIN')
   @Post(':id/unblock')
   @HttpCode(HttpStatus.OK)
   async unblock(@Param('id') id: string) {
-    return this.users.unblock(id);
+    return { success: true, data: await this.users.unblock(id) };
   }
 }

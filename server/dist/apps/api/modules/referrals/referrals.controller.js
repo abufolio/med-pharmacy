@@ -25,22 +25,24 @@ let ReferralsController = class ReferralsController {
         this.referrals = referrals;
     }
     async create(dto, user) {
-        return this.referrals.create(user.id, dto);
+        return { success: true, data: await this.referrals.create(user.id, dto) };
     }
     async findAll(page = '1', limit = '50') {
-        return this.referrals.findAll(Number(page), Number(limit));
+        const result = await this.referrals.findAll(Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async myReferrals(user, page = '1', limit = '50') {
-        return this.referrals.findByReferrer(user.id, Number(page), Number(limit));
+        const result = await this.referrals.findByReferrer(user.id, Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async myStats(user) {
-        return this.referrals.getReferralStats(user.id);
+        return { success: true, data: await this.referrals.getReferralStats(user.id) };
     }
     async findByReferred(referredId) {
-        return this.referrals.findByReferred(referredId);
+        return { success: true, data: await this.referrals.findByReferred(referredId) };
     }
     async update(id, dto) {
-        return this.referrals.update(id, dto);
+        return { success: true, data: await this.referrals.update(id, dto) };
     }
 };
 exports.ReferralsController = ReferralsController;

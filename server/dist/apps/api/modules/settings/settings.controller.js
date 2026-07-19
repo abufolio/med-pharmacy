@@ -24,19 +24,20 @@ let SettingsController = class SettingsController {
         this.settings = settings;
     }
     async create(dto) {
-        return this.settings.create(dto);
+        return { success: true, data: await this.settings.create(dto) };
     }
     async findAll(scope, page = '1', limit = '50') {
-        return this.settings.findAll(scope, Number(page), Number(limit));
+        const result = await this.settings.findAll(scope, Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async findByKey(key) {
-        return this.settings.findByKey(key);
+        return { success: true, data: await this.settings.findByKey(key) };
     }
     async update(key, dto) {
-        return this.settings.update(key, dto);
+        return { success: true, data: await this.settings.update(key, dto) };
     }
     async remove(key) {
-        return this.settings.remove(key);
+        return { success: true, data: await this.settings.remove(key) };
     }
 };
 exports.SettingsController = SettingsController;

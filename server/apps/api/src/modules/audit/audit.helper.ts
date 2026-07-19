@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { EventBus, Events } from '@server/events';
+import { AuditService, AuditEntry } from './audit.service';
 
 /**
- * AuditHelper — convenience service for emitting audit events.
+ * AuditHelper — convenience service for writing audit logs.
  *
  * Usage in any module:
  *   this.audit.log('CARD_ASSIGN', 'card', cardId, { oldVal }, { newVal });
  */
 @Injectable()
 export class AuditHelper {
-  constructor(private readonly eventBus: EventBus) {}
+  constructor(private readonly audit: AuditService) {}
 
   log(
     action: string,
@@ -19,13 +19,17 @@ export class AuditHelper {
     newValue?: Record<string, unknown>,
     metadata?: { actorType?: string; actorId?: string; ipAddress?: string },
   ): void {
-    this.eventBus.emit(Events.AUDIT_ACTION, {
+    const entry: AuditEntry = {
       action,
       entity,
       entityId,
       oldValue,
       newValue,
-      ...metadata,
-    });
+      actorType: metadata?.actorType || 'system',
+      actorId: metadata?.actorId,
+      ipAddress: metadata?.ipAddress,
+    };
+    // Fire-and-forget — never blocks the caller
+    this.audit.log(entry).catch(() => {});
   }
 }

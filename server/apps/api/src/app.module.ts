@@ -26,6 +26,8 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
 import { PromocodesModule } from './modules/promocodes/promocodes.module';
 import { FilesModule } from './modules/files/files.module';
+import { RegionsModule } from './modules/regions/regions.module';
+import { DistrictsModule } from './modules/districts/districts.module';
 import { ReportsModule } from './modules/reports/reports.module';
 
 // Global guards
@@ -75,6 +77,8 @@ import { ResponseInterceptor } from '@server/common';
     ReferralsModule,
     PromocodesModule,
     FilesModule,
+    RegionsModule,
+    DistrictsModule,
     ReportsModule,
   ],
   providers: [

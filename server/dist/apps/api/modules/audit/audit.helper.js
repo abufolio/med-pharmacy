@@ -11,26 +11,29 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuditHelper = void 0;
 const common_1 = require("@nestjs/common");
-const events_1 = require("@server/events");
+const audit_service_1 = require("./audit.service");
 let AuditHelper = class AuditHelper {
-    eventBus;
-    constructor(eventBus) {
-        this.eventBus = eventBus;
+    audit;
+    constructor(audit) {
+        this.audit = audit;
     }
     log(action, entity, entityId, oldValue, newValue, metadata) {
-        this.eventBus.emit(events_1.Events.AUDIT_ACTION, {
+        const entry = {
             action,
             entity,
             entityId,
             oldValue,
             newValue,
-            ...metadata,
-        });
+            actorType: metadata?.actorType || 'system',
+            actorId: metadata?.actorId,
+            ipAddress: metadata?.ipAddress,
+        };
+        this.audit.log(entry).catch(() => { });
     }
 };
 exports.AuditHelper = AuditHelper;
 exports.AuditHelper = AuditHelper = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [events_1.EventBus])
+    __metadata("design:paramtypes", [audit_service_1.AuditService])
 ], AuditHelper);
 //# sourceMappingURL=audit.helper.js.map

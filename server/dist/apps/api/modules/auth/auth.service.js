@@ -155,6 +155,7 @@ let AuthService = AuthService_1 = class AuthService {
             sub: employee.id,
             role: employee.role.name,
             scope: 'PHARMACY',
+            entityType: 'employee',
             pharmacyId: employee.pharmacyId,
             type: 'access',
         });
@@ -185,6 +186,7 @@ let AuthService = AuthService_1 = class AuthService {
             sub: pharmacy.id,
             role: 'PHARMACY_ADMIN',
             scope: 'PHARMACY',
+            entityType: 'pharmacy',
             pharmacyId: pharmacy.id,
             type: 'access',
         });
@@ -214,6 +216,7 @@ let AuthService = AuthService_1 = class AuthService {
             sub: employee.id,
             role: employee.role.name,
             scope: employee.role.scope,
+            entityType: 'employee',
             pharmacyId: employee.pharmacyId,
             type: 'access',
         });
@@ -231,8 +234,8 @@ let AuthService = AuthService_1 = class AuthService {
         };
     }
     async generateTokens(payload) {
-        const accessToken = this.jwt.sign({ sub: payload.sub, role: payload.role, scope: payload.scope, pharmacyId: payload.pharmacyId, type: 'access' }, { secret: process.env.JWT_SECRET, expiresIn: this.ACCESS_EXPIRES });
-        const refreshToken = this.jwt.sign({ sub: payload.sub, role: payload.role, scope: payload.scope, pharmacyId: payload.pharmacyId, type: 'refresh' }, { secret: process.env.JWT_REFRESH_SECRET, expiresIn: this.REFRESH_EXPIRES });
+        const accessToken = this.jwt.sign({ sub: payload.sub, role: payload.role, scope: payload.scope, entityType: payload.entityType, pharmacyId: payload.pharmacyId, type: 'access' }, { secret: process.env.JWT_SECRET, expiresIn: this.ACCESS_EXPIRES });
+        const refreshToken = this.jwt.sign({ sub: payload.sub, role: payload.role, scope: payload.scope, entityType: payload.entityType, pharmacyId: payload.pharmacyId, type: 'refresh' }, { secret: process.env.JWT_REFRESH_SECRET, expiresIn: this.REFRESH_EXPIRES });
         const hash = this.hashToken(refreshToken);
         await this.prisma.client.session.create({
             data: {

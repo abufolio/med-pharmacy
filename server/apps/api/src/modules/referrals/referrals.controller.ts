@@ -28,9 +28,7 @@ export class ReferralsController {
     @Body() dto: CreateReferralDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    // For now, referrer is the acting employee/admin — in production this
-    // would come from the user's own referral link
-    return this.referrals.create(user.id, dto);
+    return { success: true, data: await this.referrals.create(user.id, dto) };
   }
 
   @Roles('SUPER_ADMIN')
@@ -39,7 +37,8 @@ export class ReferralsController {
     @Query('page') page = '1',
     @Query('limit') limit = '50',
   ) {
-    return this.referrals.findAll(Number(page), Number(limit));
+    const result = await this.referrals.findAll(Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
@@ -49,24 +48,25 @@ export class ReferralsController {
     @Query('page') page = '1',
     @Query('limit') limit = '50',
   ) {
-    return this.referrals.findByReferrer(user.id, Number(page), Number(limit));
+    const result = await this.referrals.findByReferrer(user.id, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Get('my/stats')
   async myStats(@CurrentUser() user: AuthenticatedUser) {
-    return this.referrals.getReferralStats(user.id);
+    return { success: true, data: await this.referrals.getReferralStats(user.id) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Get('referred/:referredId')
   async findByReferred(@Param('referredId') referredId: string) {
-    return this.referrals.findByReferred(referredId);
+    return { success: true, data: await this.referrals.findByReferred(referredId) };
   }
 
   @Roles('SUPER_ADMIN')
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: UpdateReferralDto) {
-    return this.referrals.update(id, dto);
+    return { success: true, data: await this.referrals.update(id, dto) };
   }
 }

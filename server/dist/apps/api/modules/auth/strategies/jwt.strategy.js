@@ -25,27 +25,41 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         this.prisma = prisma;
     }
     async validate(payload) {
-        let entity = null;
         if (payload.scope === 'PHARMACY') {
-            const employee = await this.prisma.client.employee.findUnique({
-                where: { id: payload.sub },
-                select: { id: true, login: true, status: true, pharmacyId: true },
-            });
-            if (!employee || employee.status !== 'ACTIVE') {
-                throw new common_1.UnauthorizedException('Employee not found or inactive');
+            if (payload.entityType === 'pharmacy') {
+                const pharmacy = await this.prisma.client.pharmacy.findUnique({
+                    where: { id: payload.sub },
+                    select: { id: true, login: true, status: true },
+                });
+                if (!pharmacy || pharmacy.status !== 'ACTIVE') {
+                    throw new common_1.UnauthorizedException('Pharmacy not found or inactive');
+                }
+                return {
+                    id: pharmacy.id,
+                    login: pharmacy.login,
+                    role: payload.role,
+                    scope: payload.scope,
+                    pharmacyId: payload.pharmacyId,
+                };
             }
-            entity = employee;
+            if (payload.entityType === 'employee') {
+                const employee = await this.prisma.client.employee.findUnique({
+                    where: { id: payload.sub },
+                    select: { id: true, login: true, status: true },
+                });
+                if (!employee || employee.status !== 'ACTIVE') {
+                    throw new common_1.UnauthorizedException('Employee not found or inactive');
+                }
+                return {
+                    id: employee.id,
+                    login: employee.login,
+                    role: payload.role,
+                    scope: payload.scope,
+                    pharmacyId: payload.pharmacyId,
+                };
+            }
         }
-        if (!entity) {
-            throw new common_1.UnauthorizedException('Invalid token payload');
-        }
-        return {
-            id: entity.id,
-            login: entity.login,
-            role: payload.role,
-            scope: payload.scope,
-            pharmacyId: payload.pharmacyId,
-        };
+        throw new common_1.UnauthorizedException('Invalid token payload');
     }
 };
 exports.JwtStrategy = JwtStrategy;

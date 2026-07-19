@@ -28,7 +28,7 @@ export class PromocodesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() dto: CreatePromoCodeDto) {
-    return this.promocodes.create(dto);
+    return { success: true, data: await this.promocodes.create(dto) };
   }
 
   @Roles('SUPER_ADMIN')
@@ -37,32 +37,33 @@ export class PromocodesController {
     @Query('page') page = '1',
     @Query('limit') limit = '50',
   ) {
-    return this.promocodes.findAll(Number(page), Number(limit));
+    const result = await this.promocodes.findAll(Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @Roles('SUPER_ADMIN')
   @Get('code/:code')
   async findByCode(@Param('code') code: string) {
-    return this.promocodes.findByCode(code);
+    return { success: true, data: await this.promocodes.findByCode(code) };
   }
 
   @Roles('SUPER_ADMIN')
   @Get(':id')
   async findById(@Param('id') id: string) {
-    return this.promocodes.findById(id);
+    return { success: true, data: await this.promocodes.findById(id) };
   }
 
   @Roles('SUPER_ADMIN')
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: UpdatePromoCodeDto) {
-    return this.promocodes.update(id, dto);
+    return { success: true, data: await this.promocodes.update(id, dto) };
   }
 
   @Roles('SUPER_ADMIN')
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
-    return this.promocodes.remove(id);
+    return { success: true, data: await this.promocodes.remove(id) };
   }
 
   // ── Redemption ──────────────────────────────
@@ -74,7 +75,7 @@ export class PromocodesController {
     @Body() dto: RedeemPromoCodeDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.promocodes.redeem(user.id, dto);
+    return { success: true, data: await this.promocodes.redeem(user.id, dto) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
@@ -84,6 +85,7 @@ export class PromocodesController {
     @Query('page') page = '1',
     @Query('limit') limit = '50',
   ) {
-    return this.promocodes.getUserRedemptions(userId, Number(page), Number(limit));
+    const result = await this.promocodes.getUserRedemptions(userId, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 }

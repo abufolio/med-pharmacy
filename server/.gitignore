@@ -1,3 +1,46 @@
-node_modules
+# ─── Dependencies ───
+node_modules/
+
+# ─── Build ───
+dist/
+*.tsbuildinfo
+
+# ─── Environment ───
 .env
-dist
+.env.*
+!.env.example
+
+# ─── Logs ───
+logs/
+*.log
+
+# ─── Database ───
+prisma/*.db
+prisma/*.db-journal
+*.sqlite
+*.sqlite3
+
+# ─── Uploads ───
+uploads/*
+!uploads/.gitkeep
+
+# ─── Editor & IDE ───
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.sw?
+*.suo
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+*~
+
+# ─── Testing ───
+coverage/
+.nyc_output/
+
+# ─── Misc ───
+*.pem
+.cache/
+

@@ -210,6 +210,16 @@ export class CardsService {
       throw new BadRequestException('Card is not assigned to any user');
     }
 
+    // 3b. Get wallet balance
+    let balance = 0;
+    const wallet = await this.prisma.client.wallet.findUnique({
+      where: { userId: assignment.user.id },
+      select: { balance: true },
+    });
+    if (wallet) {
+      balance = Number(wallet.balance);
+    }
+
     // 4. Build scan response
     const response: ScanResponse = {
       success: true,
@@ -218,7 +228,7 @@ export class CardsService {
         firstName: assignment.user.firstName,
         lastName: assignment.user.lastName,
         phone: assignment.user.phone,
-        balance: 0,
+        balance,
       },
       card: {
         uid: card.uid,

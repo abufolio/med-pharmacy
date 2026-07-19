@@ -32,10 +32,11 @@ export class TransactionsController {
       dto.pharmacyId = user.pharmacyId!;
       dto.employeeId = dto.employeeId || user.id;
     }
-    return this.transactions.create(dto);
+    const result = await this.transactions.create(dto);
+    return { success: true, ...result };
   }
 
-  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
+  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Get()
   async findAll(
     @CurrentUser() user: AuthenticatedUser,
@@ -43,13 +44,15 @@ export class TransactionsController {
     @Query('limit') limit = '50',
   ) {
     const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId;
-    return this.transactions.findAll(pharmacyId, Number(page), Number(limit));
+    const result = await this.transactions.findAll(pharmacyId, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
-  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
+  @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN', 'EMPLOYEE')
   @Get(':id')
   async findById(@Param('id') id: string) {
-    return this.transactions.findById(id);
+    const result = await this.transactions.findById(id);
+    return { success: true, data: result };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')

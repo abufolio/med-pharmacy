@@ -26,22 +26,23 @@ let EmployeesController = class EmployeesController {
     }
     async create(dto, user) {
         const pharmacyId = user.role === 'SUPER_ADMIN' ? dto.pharmacyId : user.pharmacyId;
-        return this.employees.create(dto, pharmacyId);
+        return { success: true, data: await this.employees.create(dto, pharmacyId) };
     }
     async findAll(user, page = '1', limit = '50') {
-        return this.employees.findAll(user.pharmacyId, Number(page), Number(limit));
+        const result = await this.employees.findAll(user.pharmacyId, Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async findById(id) {
-        return this.employees.findById(id);
+        return { success: true, data: await this.employees.findById(id) };
     }
     async update(id, dto) {
-        return this.employees.update(id, dto);
+        return { success: true, data: await this.employees.update(id, dto) };
     }
     async suspend(id) {
-        return this.employees.toggleStatus(id, 'SUSPENDED');
+        return { success: true, data: await this.employees.toggleStatus(id, 'SUSPENDED') };
     }
     async activate(id) {
-        return this.employees.toggleStatus(id, 'ACTIVE');
+        return { success: true, data: await this.employees.toggleStatus(id, 'ACTIVE') };
     }
 };
 exports.EmployeesController = EmployeesController;

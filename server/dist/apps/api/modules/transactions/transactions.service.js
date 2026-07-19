@@ -42,9 +42,19 @@ let TransactionsService = TransactionsService_1 = class TransactionsService {
                 isActive: true,
                 deletedAt: null,
                 AND: [
-                    { validFrom: null }, { validFrom: { lte: new Date() } },
-                ].filter(Boolean),
-                validTo: { gte: new Date() },
+                    {
+                        OR: [
+                            { validFrom: null },
+                            { validFrom: { lte: new Date() } },
+                        ],
+                    },
+                    {
+                        OR: [
+                            { validTo: null },
+                            { validTo: { gte: new Date() } },
+                        ],
+                    },
+                ],
             },
             orderBy: { createdAt: 'desc' },
         });

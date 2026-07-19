@@ -25,19 +25,21 @@ let WalletsController = class WalletsController {
         this.wallets = wallets;
     }
     async getBalance(userId) {
-        return this.wallets.getBalance(userId);
+        return { success: true, data: await this.wallets.getBalance(userId) };
     }
     async getTransactions(userId, page = '1', limit = '50') {
-        return this.wallets.getTransactionHistory(userId, Number(page), Number(limit));
+        const result = await this.wallets.getTransactionHistory(userId, Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async requestWithdraw(userId, dto) {
-        return this.wallets.requestWithdraw(userId, dto);
+        return { success: true, data: await this.wallets.requestWithdraw(userId, dto) };
     }
     async getWithdrawRequests(page = '1', limit = '50') {
-        return this.wallets.getWithdrawRequests(undefined, Number(page), Number(limit));
+        const result = await this.wallets.getWithdrawRequests(undefined, Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async reviewWithdraw(id, user, dto) {
-        return this.wallets.reviewWithdraw(id, user.id, dto);
+        return { success: true, data: await this.wallets.reviewWithdraw(id, user.id, dto) };
     }
 };
 exports.WalletsController = WalletsController;

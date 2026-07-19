@@ -27,17 +27,18 @@ let ReadersController = class ReadersController {
     }
     async create(dto, user) {
         const pharmacyId = user.role === 'SUPER_ADMIN' ? dto.pharmacyId : user.pharmacyId;
-        return this.readers.create(dto, pharmacyId);
+        return { success: true, data: await this.readers.create(dto, pharmacyId) };
     }
     async findAll(user, page = '1', limit = '50') {
         const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId;
-        return this.readers.findAll(pharmacyId, Number(page), Number(limit));
+        const result = await this.readers.findAll(pharmacyId, Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async ping(dto) {
         return this.readers.ping(dto);
     }
     async updateStatus(serialNumber, status) {
-        return this.readers.updateStatus(serialNumber, status);
+        return { success: true, data: await this.readers.updateStatus(serialNumber, status) };
     }
 };
 exports.ReadersController = ReadersController;

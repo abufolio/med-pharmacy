@@ -7,6 +7,7 @@ export interface JwtPayload {
     sub: string;
     role: string;
     scope: 'PHARMACY' | 'SYSTEM';
+    entityType: 'pharmacy' | 'employee';
     pharmacyId?: string;
     type: 'access' | 'refresh';
 }

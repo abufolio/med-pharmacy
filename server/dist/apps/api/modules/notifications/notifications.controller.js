@@ -24,13 +24,14 @@ let NotificationsController = class NotificationsController {
         this.notifications = notifications;
     }
     async findAll(user, page = '1', limit = '50') {
-        return this.notifications.findByUser(user.id, Number(page), Number(limit));
+        const result = await this.notifications.findByUser(user.id, Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async markRead(id) {
-        return this.notifications.markRead(id);
+        return { success: true, data: await this.notifications.markRead(id) };
     }
     async markAllRead(user) {
-        return this.notifications.markAllRead(user.id);
+        return { success: true, data: await this.notifications.markAllRead(user.id) };
     }
 };
 exports.NotificationsController = NotificationsController;

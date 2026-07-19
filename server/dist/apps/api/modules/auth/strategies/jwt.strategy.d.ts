@@ -8,10 +8,10 @@ export declare class JwtStrategy extends JwtStrategy_base {
     private readonly prisma;
     constructor(prisma: PrismaService);
     validate(payload: JwtPayload): Promise<{
-        id: string;
-        login: string;
+        id: any;
+        login: any;
         role: string;
-        scope: "SYSTEM" | "PHARMACY";
+        scope: "PHARMACY";
         pharmacyId: string | undefined;
     }>;
 }

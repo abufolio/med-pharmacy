@@ -8,11 +8,18 @@ export declare class NotificationsController {
         total: any;
         page: number;
         limit: number;
+        success: boolean;
     }>;
     markRead(id: string): Promise<{
-        message: string;
+        success: boolean;
+        data: {
+            message: string;
+        };
     }>;
     markAllRead(user: AuthenticatedUser): Promise<{
-        message: string;
+        success: boolean;
+        data: {
+            message: string;
+        };
     }>;
 }

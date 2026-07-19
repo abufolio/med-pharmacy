@@ -24,14 +24,15 @@ export class ReportsController {
     const pharmacyId = user.role === 'SUPER_ADMIN'
       ? query.pharmacyId
       : user.pharmacyId;
-    if (!pharmacyId) return { data: [], total: 0, page: 1, limit: 31 };
-    return this.reports.getDailyStats(
+    if (!pharmacyId) return { success: true, data: [], total: 0, page: 1, limit: 31 };
+    const result = await this.reports.getDailyStats(
       pharmacyId!,
       query.from,
       query.to,
       Number(query.page || '1'),
       Number(query.limit || '31'),
     );
+    return { success: true, ...result };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
@@ -43,14 +44,14 @@ export class ReportsController {
     const pharmacyId = user.role === 'SUPER_ADMIN'
       ? query.pharmacyId
       : user.pharmacyId;
-    if (!pharmacyId) return { message: 'Pharmacy ID is required' };
-    return this.reports.getPharmacySummary(pharmacyId!, query.from, query.to);
+    if (!pharmacyId) return { success: true, message: 'Pharmacy ID is required' };
+    return { success: true, data: await this.reports.getPharmacySummary(pharmacyId!, query.from, query.to) };
   }
 
   @Roles('SUPER_ADMIN')
   @Get('overview')
   async getAdminOverview(@Query() query: ReportsQueryDto) {
-    return this.reports.getAdminOverview(query.from, query.to);
+    return { success: true, data: await this.reports.getAdminOverview(query.from, query.to) };
   }
 
   @Roles('SUPER_ADMIN')
@@ -60,7 +61,7 @@ export class ReportsController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.reports.getTopPharmacies(Number(limit), from, to);
+    return { success: true, data: await this.reports.getTopPharmacies(Number(limit), from, to) };
   }
 
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
@@ -72,12 +73,13 @@ export class ReportsController {
     const pharmacyId = user.role === 'SUPER_ADMIN'
       ? query.pharmacyId
       : user.pharmacyId;
-    return this.reports.getTransactionReport(
+    const result = await this.reports.getTransactionReport(
       pharmacyId,
       query.from,
       query.to,
       Number(query.page || '1'),
       Number(query.limit || '100'),
     );
+    return { success: true, ...result };
   }
 }

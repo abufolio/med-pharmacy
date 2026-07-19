@@ -29,7 +29,7 @@ export class ReadersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     const pharmacyId = user.role === 'SUPER_ADMIN' ? dto.pharmacyId! : user.pharmacyId!;
-    return this.readers.create(dto, pharmacyId);
+    return { success: true, data: await this.readers.create(dto, pharmacyId) };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -41,7 +41,8 @@ export class ReadersController {
     @Query('limit') limit = '50',
   ) {
     const pharmacyId = user.role === 'SUPER_ADMIN' ? undefined : user.pharmacyId;
-    return this.readers.findAll(pharmacyId, Number(page), Number(limit));
+    const result = await this.readers.findAll(pharmacyId, Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @Public()
@@ -58,6 +59,6 @@ export class ReadersController {
     @Param('serialNumber') serialNumber: string,
     @Body('status') status: 'ONLINE' | 'OFFLINE' | 'FAULTY',
   ) {
-    return this.readers.updateStatus(serialNumber, status);
+    return { success: true, data: await this.readers.updateStatus(serialNumber, status) };
   }
 }

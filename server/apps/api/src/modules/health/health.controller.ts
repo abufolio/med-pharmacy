@@ -1,10 +1,4 @@
 import { Controller, Get } from '@nestjs/common';
-import {
-  HealthCheckService,
-  HealthCheck,
-  MemoryHealthIndicator,
-  DiskHealthIndicator,
-} from '@nestjs/terminus';
 import { Public } from '../auth/guards/public.decorator';
 import { PrismaService } from '@server/database';
 import { CacheService } from '@server/cache';
@@ -12,9 +6,6 @@ import { CacheService } from '@server/cache';
 @Controller('health')
 export class HealthController {
   constructor(
-    private health: HealthCheckService,
-    private memory: MemoryHealthIndicator,
-    private disk: DiskHealthIndicator,
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
   ) {}
@@ -31,54 +22,43 @@ export class HealthController {
 
   /**
    * Readiness probe — can the app handle requests?
-   * Checks database, Redis, and memory.
+   * Checks database and Redis.
    */
   @Get('ready')
   @Public()
-  @HealthCheck()
-  ready() {
-    return this.health.check([
-      // Database ping
-      async () => {
-        await this.prisma.client.$queryRaw`SELECT 1`;
-        return { database: { status: 'up' } };
-      },
-      // Redis ping
-      async () => {
-        const ping = await this.cache.ping();
-        return { redis: { status: ping === 'PONG' ? 'up' : 'down' } };
-      },
-      // Memory (200MB heap threshold)
-      () => this.memory.checkHeap('memory_heap', 200 * 1024 * 1024),
-      // Disk (80% threshold)
-      () => this.disk.checkStorage('disk', {
-        thresholdPercent: 0.8,
-        path: '/',
-      }),
-    ]);
+  async ready() {
+    const checks: Record<string, string> = {};
+
+    // Database ping
+    try {
+      await this.prisma.client.$queryRaw`SELECT 1`;
+      checks.database = 'up';
+    } catch {
+      checks.database = 'down';
+    }
+
+    // Redis ping
+    try {
+      const ping = await this.cache.ping();
+      checks.redis = ping === 'PONG' ? 'up' : 'down';
+    } catch {
+      checks.redis = 'down';
+    }
+
+    const allUp = Object.values(checks).every(s => s === 'up');
+    return {
+      status: allUp ? 'ok' : 'degraded',
+      checks,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   /**
-   * Full health check (legacy path + combined view)
+   * Full health check
    */
   @Get()
   @Public()
-  @HealthCheck()
-  check() {
-    return this.health.check([
-      async () => {
-        await this.prisma.client.$queryRaw`SELECT 1`;
-        return { database: { status: 'up' } };
-      },
-      async () => {
-        const ping = await this.cache.ping();
-        return { redis: { status: ping === 'PONG' ? 'up' : 'down' } };
-      },
-      () => this.memory.checkHeap('memory_heap', 200 * 1024 * 1024),
-      () => this.disk.checkStorage('disk', {
-        thresholdPercent: 0.8,
-        path: '/',
-      }),
-    ]);
+  async check() {
+    return this.ready();
   }
 }

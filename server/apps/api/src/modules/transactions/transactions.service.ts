@@ -56,9 +56,19 @@ export class TransactionsService {
         isActive: true,
         deletedAt: null,
         AND: [
-          { validFrom: null }, { validFrom: { lte: new Date() } },
-        ].filter(Boolean) as any,
-        validTo: { gte: new Date() },
+          {
+            OR: [
+              { validFrom: null },
+              { validFrom: { lte: new Date() } },
+            ],
+          },
+          {
+            OR: [
+              { validTo: null },
+              { validTo: { gte: new Date() } },
+            ],
+          },
+        ],
       },
       orderBy: { createdAt: 'desc' },
     });

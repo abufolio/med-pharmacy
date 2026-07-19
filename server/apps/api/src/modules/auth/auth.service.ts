@@ -162,6 +162,7 @@ export class AuthService {
       sub: employee.id,
       role: employee.role.name,
       scope: 'PHARMACY',
+      entityType: 'employee',
       pharmacyId: employee.pharmacyId,
       type: 'access',
     });
@@ -210,6 +211,7 @@ export class AuthService {
       sub: pharmacy.id,
       role: 'PHARMACY_ADMIN',
       scope: 'PHARMACY',
+      entityType: 'pharmacy',
       pharmacyId: pharmacy.id,
       type: 'access',
     });
@@ -252,6 +254,7 @@ export class AuthService {
       sub: employee.id,
       role: employee.role.name,
       scope: employee.role.scope as 'PHARMACY' | 'SYSTEM',
+      entityType: 'employee',
       pharmacyId: employee.pharmacyId,
       type: 'access',
     });
@@ -273,12 +276,12 @@ export class AuthService {
 
   private async generateTokens(payload: JwtPayload): Promise<AuthTokens> {
     const accessToken = this.jwt.sign(
-      { sub: payload.sub, role: payload.role, scope: payload.scope, pharmacyId: payload.pharmacyId, type: 'access' },
+      { sub: payload.sub, role: payload.role, scope: payload.scope, entityType: payload.entityType, pharmacyId: payload.pharmacyId, type: 'access' },
       { secret: process.env.JWT_SECRET, expiresIn: this.ACCESS_EXPIRES },
     );
 
     const refreshToken = this.jwt.sign(
-      { sub: payload.sub, role: payload.role, scope: payload.scope, pharmacyId: payload.pharmacyId, type: 'refresh' },
+      { sub: payload.sub, role: payload.role, scope: payload.scope, entityType: payload.entityType, pharmacyId: payload.pharmacyId, type: 'refresh' },
       { secret: process.env.JWT_REFRESH_SECRET, expiresIn: this.REFRESH_EXPIRES },
     );
 

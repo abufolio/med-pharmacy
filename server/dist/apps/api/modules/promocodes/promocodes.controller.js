@@ -25,28 +25,30 @@ let PromocodesController = class PromocodesController {
         this.promocodes = promocodes;
     }
     async create(dto) {
-        return this.promocodes.create(dto);
+        return { success: true, data: await this.promocodes.create(dto) };
     }
     async findAll(page = '1', limit = '50') {
-        return this.promocodes.findAll(Number(page), Number(limit));
+        const result = await this.promocodes.findAll(Number(page), Number(limit));
+        return { success: true, ...result };
     }
     async findByCode(code) {
-        return this.promocodes.findByCode(code);
+        return { success: true, data: await this.promocodes.findByCode(code) };
     }
     async findById(id) {
-        return this.promocodes.findById(id);
+        return { success: true, data: await this.promocodes.findById(id) };
     }
     async update(id, dto) {
-        return this.promocodes.update(id, dto);
+        return { success: true, data: await this.promocodes.update(id, dto) };
     }
     async remove(id) {
-        return this.promocodes.remove(id);
+        return { success: true, data: await this.promocodes.remove(id) };
     }
     async redeem(dto, user) {
-        return this.promocodes.redeem(user.id, dto);
+        return { success: true, data: await this.promocodes.redeem(user.id, dto) };
     }
     async getUserRedemptions(userId, page = '1', limit = '50') {
-        return this.promocodes.getUserRedemptions(userId, Number(page), Number(limit));
+        const result = await this.promocodes.getUserRedemptions(userId, Number(page), Number(limit));
+        return { success: true, ...result };
     }
 };
 exports.PromocodesController = PromocodesController;

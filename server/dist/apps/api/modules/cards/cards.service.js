@@ -180,6 +180,14 @@ let CardsService = CardsService_1 = class CardsService {
         if (!assignment) {
             throw new common_1.BadRequestException('Card is not assigned to any user');
         }
+        let balance = 0;
+        const wallet = await this.prisma.client.wallet.findUnique({
+            where: { userId: assignment.user.id },
+            select: { balance: true },
+        });
+        if (wallet) {
+            balance = Number(wallet.balance);
+        }
         const response = {
             success: true,
             user: {
@@ -187,7 +195,7 @@ let CardsService = CardsService_1 = class CardsService {
                 firstName: assignment.user.firstName,
                 lastName: assignment.user.lastName,
                 phone: assignment.user.phone,
-                balance: 0,
+                balance,
             },
             card: {
                 uid: card.uid,

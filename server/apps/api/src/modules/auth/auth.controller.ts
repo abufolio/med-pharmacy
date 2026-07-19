@@ -24,14 +24,16 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginDto) {
-    return this.auth.login(dto);
+    const result = await this.auth.login(dto);
+    return { success: true, ...result };
   }
 
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(@Body() dto: RefreshDto) {
-    return this.auth.refresh(dto);
+    const result = await this.auth.refresh(dto);
+    return { success: true, ...result };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -60,6 +62,7 @@ export class AuthController {
         ? dto.pharmacyId!
         : req.user.pharmacyId;
 
-    return this.auth.registerEmployee(dto, pharmacyId);
+    const result = await this.auth.registerEmployee(dto, pharmacyId);
+    return { success: true, data: result };
   }
 }

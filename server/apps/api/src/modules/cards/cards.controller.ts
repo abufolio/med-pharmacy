@@ -28,21 +28,22 @@ export class CardsController {
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Post()
   async create(@Body() dto: CreateCardDto) {
-    return this.cards.create(dto);
+    return { success: true, data: await this.cards.create(dto) };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get()
   async findAll(@Query('page') page = '1', @Query('limit') limit = '50') {
-    return this.cards.findAll(Number(page), Number(limit));
+    const result = await this.cards.findAll(Number(page), Number(limit));
+    return { success: true, ...result };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN', 'PHARMACY_ADMIN')
   @Get(':uid')
   async findByUid(@Param('uid') uid: string) {
-    return this.cards.findByUid(uid);
+    return { success: true, data: await this.cards.findByUid(uid) };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -52,7 +53,7 @@ export class CardsController {
     @Param('uid') uid: string,
     @Body('status') status: 'BLOCKED' | 'ACTIVE',
   ) {
-    return this.cards.updateStatus(uid, status);
+    return { success: true, data: await this.cards.updateStatus(uid, status) };
   }
 
   /* ── Assignment ── */
@@ -62,7 +63,7 @@ export class CardsController {
   @Post('assign')
   @HttpCode(HttpStatus.OK)
   async assignCard(@Body() dto: AssignCardDto) {
-    return this.cards.assignCard(dto);
+    return { success: true, data: await this.cards.assignCard(dto) };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -70,7 +71,7 @@ export class CardsController {
   @Post('unassign')
   @HttpCode(HttpStatus.OK)
   async unassignCard(@Body() dto: UnassignCardDto) {
-    return this.cards.unassignCard(dto);
+    return { success: true, data: await this.cards.unassignCard(dto) };
   }
 
   /* ── NFC Scan — Public (authenticated via reader) ── */

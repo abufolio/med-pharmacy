@@ -9,40 +9,54 @@ export declare class ReportsController {
         total: any;
         page: number;
         limit: number;
+        success: boolean;
     }>;
     getPharmacySummary(user: AuthenticatedUser, query: ReportsQueryDto): Promise<{
-        pharmacyId: string;
-        period: {
-            from: string;
-            to: string;
-        };
-        days: any;
-        totalTransactions: any;
-        totalAmount: any;
-        totalCashback: any;
-        totalCustomers: any;
-        avgTransactionAmount: any;
-    } | {
+        success: boolean;
         message: string;
+        data?: undefined;
+    } | {
+        success: boolean;
+        data: {
+            pharmacyId: string;
+            period: {
+                from: string;
+                to: string;
+            };
+            days: any;
+            totalTransactions: any;
+            totalAmount: any;
+            totalCashback: any;
+            totalCustomers: any;
+            avgTransactionAmount: any;
+        };
+        message?: undefined;
     }>;
     getAdminOverview(query: ReportsQueryDto): Promise<{
-        period: {
-            from: string;
-            to: string;
+        success: boolean;
+        data: {
+            period: {
+                from: string;
+                to: string;
+            };
+            totalTransactions: any;
+            totalAmount: any;
+            totalCashback: any;
+            totalCustomers: any;
+            activePharmacies: any;
+            activeUsers: any;
+            pendingWithdraws: any;
         };
-        totalTransactions: any;
-        totalAmount: any;
-        totalCashback: any;
-        totalCustomers: any;
-        activePharmacies: any;
-        activeUsers: any;
-        pendingWithdraws: any;
     }>;
-    getTopPharmacies(limit?: string, from?: string, to?: string): Promise<any>;
+    getTopPharmacies(limit?: string, from?: string, to?: string): Promise<{
+        success: boolean;
+        data: any;
+    }>;
     getTransactionReport(user: AuthenticatedUser, query: ReportsQueryDto): Promise<{
         data: any;
         total: any;
         page: number;
         limit: number;
+        success: boolean;
     }>;
 }

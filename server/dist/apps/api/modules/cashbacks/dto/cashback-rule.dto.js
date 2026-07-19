@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateCashbackRuleDto = exports.CreateCashbackRuleDto = void 0;
 const class_validator_1 = require("class-validator");
@@ -24,7 +25,7 @@ class CreateCashbackRuleDto {
 exports.CreateCashbackRuleDto = CreateCashbackRuleDto;
 __decorate([
     (0, class_validator_1.IsEnum)(['PERCENT', 'FIXED', 'CAMPAIGN']),
-    __metadata("design:type", String)
+    __metadata("design:type", typeof (_a = typeof client_1.CashbackType !== "undefined" && client_1.CashbackType) === "function" ? _a : Object)
 ], CreateCashbackRuleDto.prototype, "type", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)({ maxDecimalPlaces: 2 }),
@@ -72,7 +73,7 @@ exports.UpdateCashbackRuleDto = UpdateCashbackRuleDto;
 __decorate([
     (0, class_validator_1.IsEnum)(['PERCENT', 'FIXED', 'CAMPAIGN']),
     (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
+    __metadata("design:type", typeof (_b = typeof client_1.CashbackType !== "undefined" && client_1.CashbackType) === "function" ? _b : Object)
 ], UpdateCashbackRuleDto.prototype, "type", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)({ maxDecimalPlaces: 2 }),

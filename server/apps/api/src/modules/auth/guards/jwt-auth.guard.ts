@@ -1,19 +1,16 @@
 import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from './public.decorator';
+import 'reflect-metadata';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private readonly reflector: Reflector) {
-    super();
-  }
-
   canActivate(context: ExecutionContext) {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    // Check @Public() decorator via reflect-metadata directly
+    const isPublic =
+      Reflect.getMetadata(IS_PUBLIC_KEY, context.getHandler()) ??
+      Reflect.getMetadata(IS_PUBLIC_KEY, context.getClass()) ??
+      false;
 
     if (isPublic) return true;
 
